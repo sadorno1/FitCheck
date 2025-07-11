@@ -1,0 +1,26 @@
+
+
+
+/* closet_view */
+/* grid container */
+.closet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+/* each item card */
+.closet-item {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+/* the image inside */
+.closet-item img {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
