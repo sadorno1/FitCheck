@@ -2,11 +2,14 @@ from flask import Flask, request, jsonify
 from routes.upload_item import upload_item_handler
 from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result import store_quiz_result
+from flask_cors import CORS
+
 
 app = Flask(__name__)
-
+CORS(app)
 def get_user_id_from_token(request):
     return 'sam123'
+
     
 @app.route('/upload_item', methods=['POST'])
 def upload_item():
