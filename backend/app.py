@@ -1,11 +1,7 @@
 from flask import Flask, request, jsonify
-from firebase_admin import credentials, auth, initialize_app
 from routes.upload_item import upload_item_handler
 from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result import store_quiz_result
-
-cred = credentials.Certificate("serviceAccountKey.json")  
-initialize_app(cred)
 
 app = Flask(__name__)
 
