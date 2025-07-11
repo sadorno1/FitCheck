@@ -3,10 +3,8 @@ from services.firebase_upload import upload_to_firebase
 from services.vision import get_tags_from_image
 from db.insert_clothing_item import save_item_to_db 
 
-def upload_item_handler(request):
+def upload_item_handler(request, user_id):
     image = request.files.get('image')
-    user_id = request.form.get('user_id') #temporary we need the firebase id
-
     cleaned_image = remove_background(image)
     image_url = upload_to_firebase(cleaned_image)
 
