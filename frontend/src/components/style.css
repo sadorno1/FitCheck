@@ -1,4 +1,15 @@
 /* style.css */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: #fef6ff; 
+}
+
+.app-main {
+  flex: 1;
+  padding: 20px;
+  background-color: #fef6ff; 
+}
 /* Header styles */
 
 .header {
@@ -345,3 +356,14 @@ body {
 .fc-icon {
   font-size: 22px;
 }
+.feed-container    { max-width: 550px; margin: 0 auto; }
+.post-card         { background:#fff;border:1px solid #ddd;margin-bottom:24px;border-radius:8px;overflow:hidden; }
+.post-header       { display:flex;align-items:center;padding:12px 16px; }
+.post-avatar       { width:32px;height:32px;border-radius:50%;object-fit:cover;margin-right:8px; }
+.post-image        { width:100%;display:block; }
+.post-actions      { display:flex;align-items:center;padding:8px 16px; }
+.post-like-btn     { background:none;border:none;cursor:pointer;font-size:22px; }
+.post-like-btn.liked svg { fill:#ff385c; }   /* highlight when liked */
+.post-like-count   { margin-left:8px;font-weight:600; }
+.post-caption      { padding:0 16px 16px; }
+.load-more-btn     { display:block;margin:24px auto;padding:8px 24px;border:none;background:#6e1d9f;color:#fff;border-radius:6px;cursor:pointer; }

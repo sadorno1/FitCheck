@@ -1,36 +1,47 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./components/login";
-import Register from "./components/register";
-import Home from "./components/home";
-import ClosetView from "./components/closet";
-import UploadItem from "./components/upload-item";
-import Sidebar from "./components/sidebar";   // ← new
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import Login       from "./components/login";
+import Register    from "./components/register";
+import Intro       from "./components/intro";
+import ClosetView  from "./components/closet";
+import UploadItem  from "./components/upload-item";
+import Feed        from "./components/feed";
+
+import RequireAuth     from "./components/RequireAuth";
+import ProtectedLayout from "./components/ProtectedLayout";
+
 import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
 
-const App = () => {
+export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="app-wrapper" style={{ display: "flex" }}>
-          {/* left‑side navigation */}
-          <Sidebar />
+        <Routes>
+          {/* public  */}
+          <Route path="/intro"    element={<Intro />} />
+          <Route path="/login"    element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-          {/* main content */}
-          <main className="app-main" style={{ flex: 1 }}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/closet" element={<ClosetView />} />
+          {/* protected  */}
+          <Route element={<RequireAuth />}>
+            <Route element={<ProtectedLayout />}>
+              <Route path="/"            element={<Feed />} />
+              <Route path="/closet"      element={<ClosetView />} />
               <Route path="/upload-item" element={<UploadItem />} />
-            </Routes>
-          </main>
-        </div>
+            </Route>
+          </Route>
+
+          {/* catch‑all  intro */}
+          <Route path="*" element={<Navigate to="/intro" replace />} />
+        </Routes>
       </Router>
     </AuthProvider>
   );
-};
-
-export default App;
+}
