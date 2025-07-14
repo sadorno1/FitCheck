@@ -3,6 +3,8 @@ import functools
 from flask import request, jsonify, g
 import firebase_admin
 from firebase_admin import credentials, auth as fb_auth
+from dotenv import load_dotenv
+load_dotenv()
 
 cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 if not cred_path:

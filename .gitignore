@@ -8,12 +8,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
+__pycache__
 node_modules
 dist
 dist-ssr
 *.local
-
+fitcheck_secret.json
+pyc
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
