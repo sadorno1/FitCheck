@@ -1,3 +1,109 @@
+/* style.css */
+/* Header styles */
+
+.header {
+  padding: 20px;
+  background-color: #6e1d9f;
+  text-align: left;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.header-logo {
+  text-decoration: none;
+  color: #fef6ff;
+  font-family: 'Inter', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-icon {
+  font-size: 2.2rem;
+  vertical-align: middle;
+  color: #fef6ff;
+}
+
+.header-text {
+  vertical-align: middle;
+}
+
+/*home*/
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(to bottom, #fef6ff, #fff);
+  color: #222;
+}
+
+.home-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: transparent;
+  width: 100%;
+  height: 100%;
+}
+
+.home-content {
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+  padding: 3rem 2rem;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.home-title {
+  font-size: 3rem;
+  color: #6e1d9f;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.home-subtitle {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: #444;
+  margin-bottom: 2.5rem;
+}
+
+.home-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.home-button {
+  padding: 12px 28px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.home-button.login {
+  background-color: #6e1d9f;
+  color: #fff;
+}
+
+.home-button.register {
+  background-color: #f8e1ff;
+  color: #6e1d9f;
+}
+
+.home-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
 
 
 
@@ -10,17 +116,145 @@
 }
 
 /* each item card */
-.closet-item {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 0.5rem;
+.closet-container {
+  /* centre the whole block horizontally */
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;              /* <— centres the element */
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;         /* <— centres children inside */
+}
+
+/* header now stretches but its content is centred */
+.closet-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.closet-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #6e1d9f;
+}
+
+/* grid centred under header */
+.closet-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.2rem;
+  justify-items: center;
+}
+
+/* empty state centred */
+.closet-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  border: 2px dashed #d9c7f0;
+  border-radius: 12px;
+  width: 100%;
+}
+
+/* optional: centre lone buttons in empty state */
+.closet-empty .primary-btn {
+  margin-top: 1rem;
+}
+
+/* keep the nicer button styles */
+.primary-btn {
+  display: inline-block;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #6e1d9f 0%, #8c3ac4 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(110, 29, 159, 0.25);
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, #7d24b5 0%, #9b4ad6 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(110, 29, 159, 0.35);
+}
+
+.primary-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(110, 29, 159, 0.25);
+}
+
+/* Loading indicator still centred */
+.closet-loading {
+  text-align: center;
+  padding: 4rem 1rem;
+  font-size: 1.2rem;
+  color: #555;
+}
+
+/*login/register styles*/
+/* Login form styles */
+
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 100px); 
+}
+
+.form-card {
+  background-color: #ffffff;
+  padding: 2.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.07);
+  width: 100%;
+  max-width: 400px;
   text-align: center;
 }
 
-/* the image inside */
-.closet-item img {
+.form-title {
+  font-size: 2rem;
+  color: #6e1d9f;
+  margin-bottom: 2rem;
+  font-weight: 700;
+}
+
+.form-input {
   width: 100%;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
+  padding: 12px 16px;
+  margin-bottom: 1.2rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #6e1d9f;
+  outline: none;
+}
+
+.form-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #6e1d9f;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.form-button:hover {
+  background-color: #55157d;
 }

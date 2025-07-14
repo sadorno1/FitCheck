@@ -42,3 +42,23 @@ def sql_query(query, fetch=False):
     else:
         conn.commit()
         conn.close()
+
+def get_or_create_user_id(firebase_uid: str) -> int:
+    rows = sql_query(
+        "SELECT id FROM user WHERE firebase_uid = ?",
+        params=(firebase_uid,),
+        fetch=True,
+    )
+    if rows:
+        return rows[0][0]          
+
+    sql_query(
+        "INSERT INTO user (firebase_uid) VALUES (?)",
+        params=(firebase_uid,),
+        fetch=False,
+    )
+    rows = sql_query(
+        "SELECT last_insert_rowid()",
+        fetch=True,
+    )
+    return rows[0][0]
