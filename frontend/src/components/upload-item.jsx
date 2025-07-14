@@ -26,7 +26,7 @@ const UploadItem = () => {
       const formData = new FormData();
       formData.append("image", file);
 
-      const res = await fetch("/upload_item", {
+      const res = await fetch("http://localhost:5000//upload_item", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${idToken}`,

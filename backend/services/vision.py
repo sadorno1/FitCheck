@@ -4,16 +4,14 @@ from collections import Counter
 from dotenv import load_dotenv
 import os
 load_dotenv()
-print("Using credentials from:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 client = vision.ImageAnnotatorClient()
-def analyze_image_labels(image_path):
-    with open(image_path, 'rb') as image_file:
-        content = image_file.read()
-    image = vision.Image(content=content)
+
+def analyze_image_labels(img_bytes):
+    image = vision.Image(content=img_bytes)
     response = client.label_detection(image=image)
-    labels = response.label_annotations
-    top_labels = [label.description.lower() for label in labels[:10]]
-    return top_labels
+    labels = [label.description.lower() for label in response.label_annotations[:10]]
+    return labels
+
 def map_labels_to_tags(labels):
     type_map = {'shirt': 'top', 'jeans': 'bottom', 'jacket': 'outerwear', 'dress': 'dress'}
     etiquette_map = {'pajamas': 'pajama', 'tuxedo': 'formal', 'sweatshirt': 'casual', 'blazer': 'professional'}

@@ -1,14 +1,16 @@
 import sqlite3
 
-DB_NAME = 'fitcheck.db'
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent
+DB_NAME = BASE_DIR / "fitcheck.db"
 
 def init_db():
     init_table_user_query= """
-    CREATE TABLE IF NOT EXISTS user (
+    CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 firebase_uid TEXT UNIQUE NOT NULL,
-                username TEXT
-                style TEXT
+                username TEXT,
+                style TEXT,
                 age INTEGER
             )
     """
@@ -22,7 +24,7 @@ def init_db():
                 color TEXT,
                 etiquette TEXT,
                 description TEXT,
-                timetag DATETIME DEFAULT CURRENT_TIMESTAMP
+                timetag DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
     """
@@ -44,21 +46,15 @@ def sql_query(query, fetch=False):
         conn.close()
 
 def get_or_create_user_id(firebase_uid: str) -> int:
-    rows = sql_query(
-        "SELECT id FROM user WHERE firebase_uid = ?",
-        params=(firebase_uid,),
-        fetch=True,
-    )
-    if rows:
-        return rows[0][0]          
+    escaped = firebase_uid.replace("'", "''")
 
-    sql_query(
-        "INSERT INTO user (firebase_uid) VALUES (?)",
-        params=(firebase_uid,),
-        fetch=False,
-    )
-    rows = sql_query(
-        "SELECT last_insert_rowid()",
-        fetch=True,
-    )
-    return rows[0][0]
+    # look-up
+    rows = sql_query(f"SELECT id FROM users WHERE firebase_uid = '{escaped}'",
+                     fetch=True)
+    if rows:
+        return rows[0][0]
+
+    # insert
+    sql_query(f"INSERT INTO users (firebase_uid) VALUES ('{escaped}')")
+    new_id = sql_query("SELECT last_insert_rowid()", fetch=True)[0][0]
+    return new_id

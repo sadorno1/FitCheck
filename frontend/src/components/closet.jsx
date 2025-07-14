@@ -15,8 +15,9 @@ const ClosetView = () => {
       if (!user) return;                             
 
       const idToken = await user.getIdToken();
+      console.log("🔥 Firebase ID Token:", idToken);  
       try {
-        const res = await fetch("/get_closet_by_user", {
+        const res = await fetch("http://localhost:5000/get_closet_by_user", {
           headers: { Authorization: `Bearer ${idToken}` },
         });
         const data = await res.json();
@@ -60,16 +61,19 @@ const ClosetView = () => {
         </div>
       ) : (
         <div className="closet-grid">
-          {items.map((cl) => (
-            <div key={cl.id} className="closet-card">
-              <img src={cl.image_url} alt={cl.description || "Clothing item"} />
-              <div className="closet-meta">
-                <span>{cl.type}</span>
-                <span>{cl.color}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+  {items.map((cl) => (
+    <div key={cl.id} className="closet-card">
+      <img className="closet-img" src={cl.image_url} alt={cl.description || "Clothing item"} />
+
+      <div className="closet-tags">
+        <span className="tag">{cl.type}</span>
+        <span className="tag">{cl.color}</span>
+        <span className="tag">{cl.etiquette}</span>
+      </div>
+    </div>
+  ))}
+</div>
+
       )}
     </div>
   );

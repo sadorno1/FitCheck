@@ -114,7 +114,44 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 1rem;
 }
+.closet-card {
+  width: 160px;               /* use same min-width as grid cell */
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform .15s ease;
+}
+.closet-card:hover { transform: translateY(-4px); }
+.closet-img {
+  width: 100%;
+  height: 160px;              /* fixed height for uniformity */
+  object-fit: contain;        /* keep aspect ratio, no crop */
+  background: #f5f3fa;        /* soft placeholder bg */
+}
+/* tag row */
+.closet-tags {
+  padding: .5rem .6rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  justify-content: center;
+}
 
+/* individual tag pill */
+.tag {
+  font-size: .72rem;
+  font-weight: 600;
+  color: #6e1d9f;
+  background: #ede2ff;
+  padding: .25rem .55rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
 /* each item card */
 .closet-container {
   /* centre the whole block horizontally */

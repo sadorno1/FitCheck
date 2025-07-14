@@ -5,10 +5,13 @@ from auth import require_auth
 from routes.upload_item import upload_item_handler
 from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result import store_quiz_result
-from db.init_db import get_or_create_user_id           
+from db.init_db import get_or_create_user_id, init_db      
+from db.init_db import DB_NAME     
+init_db()
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)              
+
 
 
 @app.route("/upload_item", methods=["POST"])
@@ -16,7 +19,7 @@ CORS(app, supports_credentials=True)
 def upload_item():
     firebase_uid = g.current_user["uid"]
     user_id = get_or_create_user_id(firebase_uid)      
-    return upload_item_handler(request, user_id)
+    return upload_item_handler(request, user_id, firebase_uid) 
 
 
 @app.route("/get_closet_by_user", methods=["GET"])

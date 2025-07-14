@@ -1,17 +1,16 @@
 import uuid
 from firebase_admin import storage
 
-def upload_to_firebase(file_obj, firebase_uid: str) -> str:
-    ext = (file_obj.filename.rsplit(".", 1)[-1]).lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
+bucket = storage.bucket() 
 
-    bucket = storage.bucket()                     
+def upload_to_firebase(img_bytes: bytes, firebase_uid: str) -> str:
+    
 
-    blob_path = f"users/{firebase_uid}/{filename}"
-    blob = bucket.blob(blob_path)
+    ext = "png"
+    blob_name = f"closets/{firebase_uid}/{uuid.uuid4()}.{ext}"
+    blob = bucket.blob(blob_name)
 
-    blob.upload_from_file(file_obj, content_type=file_obj.content_type)
-
+    blob.upload_from_string(img_bytes, content_type="image/png")
     blob.make_public()
 
     return blob.public_url
