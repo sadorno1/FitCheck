@@ -295,3 +295,53 @@ body {
 .form-button:hover {
   background-color: #55157d;
 }
+
+/*sidebar styles*/
+/* change colors / sizes as you like */
+/* ─── Sidebar (vertical, matches old header colors) ─────────────── */
+.fc-sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background: #6e1d9f;          /* same purple as header */
+  color: #fef6ff;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+  font-family: "Inter", sans-serif;
+}
+
+.fc-logo {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 32px;
+}
+
+.fc-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.fc-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-radius: 8px;
+  color: #fef6ff;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.fc-link:hover {
+  background: rgba(255, 246, 255, 0.12); /* subtle lighten on hover */
+}
+
+.fc-link--active {
+  background: rgba(255, 246, 255, 0.24); /* active highlight */
+}
+
+.fc-icon {
+  font-size: 22px;
+}

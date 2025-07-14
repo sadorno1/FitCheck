@@ -9,6 +9,8 @@ def init_db():
     CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 firebase_uid TEXT UNIQUE NOT NULL,
+                avatar_url TEXT,
+                bio TEXT,
                 username TEXT,
                 style TEXT,
                 age INTEGER
@@ -25,11 +27,49 @@ def init_db():
                 etiquette TEXT,
                 description TEXT,
                 timetag DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
     """
+    init_table_posts_query = """  
+        CREATE TABLE IF NOT EXISTS posts (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            author_id     INTEGER NOT NULL,
+            image_url     TEXT NOT NULL,
+            caption       TEXT,
+            created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+            like_count    INTEGER DEFAULT 0,
+            FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """,
+    init_follow = """
+ CREATE TABLE IF NOT EXISTS follows (
+            follower_id  INTEGER NOT NULL,
+            followed_id  INTEGER NOT NULL,
+            created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (follower_id, followed_id),
+            FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (followed_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """
+    init_likes = """
+ CREATE TABLE IF NOT EXISTS likes (
+            post_id    INTEGER NOT NULL,
+            user_id    INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (post_id, user_id),
+            FOREIGN KEY (post_id) REFERENCES posts(id)  ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id)  ON DELETE CASCADE
+        )
+        """
+    
+    init_index="CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);"
+    
     sql_query(init_table_user_query)
     sql_query(init_table_clothes_query)
+    sql_query(init_table_posts_query)
+    sql_query(init_follow)
+    sql_query(init_likes)
+    sql_query(init_index)     
 
 
 def sql_query(query, fetch=False):
