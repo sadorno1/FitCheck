@@ -1,41 +1,24 @@
-# ─── Python / Flask ──────────────────────────────────────────────────────────
-# Byte-compiled / cache
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual environments
-env/
-venv/
-ENV/
-.venv/
-
-# Flask instance folder or config files
-instance/
-*.env
-.env.*
-
-# IDE/project files
-.vscode/
-*.sublime-project
-*.sublime-workspace
-
-# ─── Node / React ────────────────────────────────────────────────────────────
-# dependencies
-/frontend/node_modules/
-
-# production build
-/frontend/build/
-
-# logs
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# lockfiles (if you want to version them, remove these)
-# package-lock.json
-# yarn.lock
+node_modules
+dist
+dist-ssr
+*.local
 
-# ─── General ────────────────────────────────────────────────────────────────
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
