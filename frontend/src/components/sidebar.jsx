@@ -13,7 +13,7 @@ import "./style.css";   // make sure the CSS below is in this file
 
 const NAV_ITEMS = [
   { label: "Home",           route: "/",           icon: FiHome },
-  { label: "Search",         route: "/search",     icon: FiSearch },
+  { label: "Search",         route: "/quiz",     icon: FiSearch },
   { label: "My Closet",      route: "/closet",     icon: FiBox },
   { label: "Virtual Try‑On", route: "/try-on",     icon: FiCamera },
   { label: "Saved",          route: "/saved",      icon: FiBookmark },

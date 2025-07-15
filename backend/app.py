@@ -1,18 +1,20 @@
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
-
 from auth import require_auth
-from routes.upload_item import upload_item_handler, upload_to_storage
-
-# DB helpers
+from routes.upload_item import upload_item_handler
+import json
+from services.firebase_upload import upload_to_firebase
+from db.store_quiz_result import store_quiz_result
 from db.init_db import (
-    init_db, DB_NAME, get_or_create_user_id,
+    init_db, DB_NAME, get_or_create_user_id,sql_query,
     create_post, toggle_like, toggle_follow, get_feed
 )
 from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result   import store_quiz_result
 
-init_db()          # ensure tables exist
+init_db()          
+rows = sql_query("SELECT * FROM users", fetch=True)
+print([dict(row) for row in rows])
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -35,28 +37,64 @@ def get_closet_route():
     return jsonify(closet)
 
 
+
 @app.route("/submit_quiz", methods=["POST"])
 @require_auth
 def submit_quiz():
     firebase_uid = g.current_user["uid"]
-    user_id      = get_or_create_user_id(firebase_uid)
+    user_id = get_or_create_user_id(firebase_uid)
 
-    data  = request.get_json()
-    style = data.get("style")
-    store_quiz_result(user_id, style)
+    username = request.form.get("username")
+    age      = int(request.form.get("age", 0))
+    gender   = request.form.get("gender")
+    bio      = request.form.get("bio")
+    picks    = json.loads(request.form.get("picks", "[]")) 
+
+    style_labels = picks  
+
+    avatar_file = request.files.get("avatar")
+    if avatar_file:
+        avatar_url = upload_to_firebase(firebase_uid, avatar_file)
+    else:
+        avatar_url = ""
+
+    store_quiz_result(
+        user_id=user_id,
+        username=username,
+        avatar_url=avatar_url,
+        bio=bio,
+        age=age,
+        gender=gender,
+        style_labels=style_labels,
+    )
 
     return {"message": "Quiz results saved successfully"}
+
+@app.get("/check_username")
+@require_auth
+def check_username():
+    username = request.args.get("username", "").strip()
+    if not username:
+        return jsonify(available=False)
+
+    row = sql_query(
+        "SELECT 1 FROM users WHERE username = ?",
+        (username,),
+        fetch=True
+    )
+    return jsonify(available=len(row) == 0)
+
 
 # ─────────────────────────── Social Feed ─────────────────────────── #
 @app.post("/posts")
 @require_auth
 def api_create_post():
     uid      = g.current_user["uid"]
-    file     = request.files["image"]                    # multipart form field
+    file     = request.files["image"]                   
     caption  = request.form.get("caption", "")
 
     # 1. upload to storage → public URL
-    image_url = upload_to_storage(uid, file)
+    image_url = upload_to_firebase(uid, file)
 
     # 2. DB write
     author_id = get_or_create_user_id(uid)

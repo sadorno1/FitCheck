@@ -12,7 +12,7 @@ import Intro       from "./components/intro";
 import ClosetView  from "./components/closet";
 import UploadItem  from "./components/upload-item";
 import Feed        from "./components/feed";
-
+import Quiz        from "./components/quiz";
 import RequireAuth     from "./components/RequireAuth";
 import ProtectedLayout from "./components/ProtectedLayout";
 
@@ -35,10 +35,12 @@ export default function App() {
               <Route path="/"            element={<Feed />} />
               <Route path="/closet"      element={<ClosetView />} />
               <Route path="/upload-item" element={<UploadItem />} />
+              <Route path="/quiz" element={<Quiz />} />
+
             </Route>
           </Route>
 
-          {/* catch‑all  intro */}
+          catch‑all  intro
           <Route path="*" element={<Navigate to="/intro" replace />} />
         </Routes>
       </Router>
