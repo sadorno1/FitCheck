@@ -8,14 +8,20 @@ from db.store_quiz_result import store_quiz_result
 from db.init_db import (
     init_db, DB_NAME, get_or_create_user_id,sql_query,
     create_post, toggle_like, toggle_follow, get_feed, get_following,
-    add_clothes_to_post
+    add_clothes_to_post, clothes_for_post
 )
 from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result   import store_quiz_result
 
-init_db()          
-rows = sql_query("SELECT * FROM users", fetch=True)
+init_db()
+rows = sql_query("SELECT * FROM post_clothes WHERE post_id = ?", (0,), fetch=True)
 print([dict(row) for row in rows])
+clothing_item = sql_query("SELECT * FROM clothes WHERE id = ?", (1,), fetch=True)
+if clothing_item:
+    print(dict(clothing_item[0]))
+else:
+    print("Clothing item not found.")
+
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)

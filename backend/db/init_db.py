@@ -108,15 +108,20 @@ def get_or_create_user_id(firebase_uid: str) -> int:
     new_id = sql_query("SELECT last_insert_rowid()", fetch=True)[0][0]
     return new_id
 
-def create_post(author_id: int,
-                image_url: str,
-                caption: str = "") -> int:
-    sql_query(
+def create_post(author_id: int, image_url: str, caption: str = "") -> int:
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    cur.execute(
         "INSERT INTO posts (author_id, image_url, caption) VALUES (?, ?, ?)",
         (author_id, image_url, caption)
     )
-    post_id = sql_query("SELECT last_insert_rowid()", fetch=True)[0][0]
+    post_id = cur.lastrowid   
+    conn.commit()
+    conn.close()
     return post_id
+
 
 
 def toggle_like(user_id: int, post_id: int):
@@ -169,10 +174,11 @@ def toggle_follow(follower_id: int, followed_id: int):
         )
 
 
-def get_feed(user_id: int,
-             limit: int = 20,
-             offset: int = 0) -> list[dict]:
-    # who the user 
+def get_feed(
+    user_id: int,
+    limit: int = 20,
+    offset: int = 0
+) -> list[dict]:
     rows = sql_query(
         "SELECT followed_id FROM follows WHERE follower_id = ?",
         (user_id,),
@@ -194,7 +200,14 @@ def get_feed(user_id: int,
         (*author_ids, limit, offset),
         fetch=True
     )
-    return [dict(r) for r in rows]
+
+    posts = []
+    for r in rows:
+        post = dict(r)
+        post["clothes"] = clothes_for_post(post["id"]) 
+        posts.append(post)
+
+    return posts
 
 def get_following(user_id: int) -> list[dict]:
     rows = sql_query("""

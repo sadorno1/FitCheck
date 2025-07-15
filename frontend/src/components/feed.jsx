@@ -13,32 +13,58 @@ function FollowCircle({ user }) {
 }
 
 function PostCard({ post, onToggleLike }) {
-  const { id, username, avatar_url, image_url, caption, like_count, likedByMe } =
-    post;
+  const {
+    id,
+    username,
+    avatar_url,
+    image_url,
+    caption,
+    like_count,
+    likedByMe,
+    clothes = [],
+  } = post;
 
   return (
     <div className="post-card">
-      <div className="post-header">
-        <img src={avatar_url} alt={username} className="post-avatar" />
-        <span className="post-username">{username}</span>
+      {/* left : main photo */}
+      <div className="post-main">
+        <div className="post-header">
+          <img src={avatar_url} alt={username} className="post-avatar" />
+          <span className="post-username">{username}</span>
+        </div>
+
+        <img src={image_url} alt={caption} className="post-image" />
+
+        <div className="post-actions">
+          <button
+            className={`post-like-btn ${likedByMe ? "liked" : ""}`}
+            onClick={() => onToggleLike(id)}
+          >
+            <FiHeart />
+          </button>
+          <span className="post-like-count">{like_count}</span>
+        </div>
+
+        {caption && <p className="post-caption">{caption}</p>}
       </div>
 
-      <img src={image_url} alt={caption} className="post-image" />
-
-      <div className="post-actions">
-        <button
-          className={`post-like-btn ${likedByMe ? "liked" : ""}`}
-          onClick={() => onToggleLike(id)}
-        >
-          <FiHeart />
-        </button>
-        <span className="post-like-count">{like_count}</span>
-      </div>
-
-      {caption && <p className="post-caption">{caption}</p>}
+      {/* right : clothes breakdown */}
+      {clothes.length > 0 && (
+        <div className="post-outfit">
+          {clothes.map((c) => (
+            <img
+              key={c.id}
+              src={c.image_url}
+              alt=""
+              className="outfit-piece"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
 
 export default function Feed() {
   const auth = getAuth();
