@@ -1,5 +1,5 @@
 // src/components/search.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useSearchDrawer } from '../contexts/SearchDrawerContext';
 import { useAuth } from '../contexts/authContext';
@@ -33,12 +33,37 @@ const fetchSearch = async (query = '') => {
 export default function SearchDrawer() {
   const { isOpen, close } = useSearchDrawer();
   const { currentUser } = useAuth();
+  const drawerRef = useRef(null);
+
+    useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e) => {
+      if (drawerRef.current && !drawerRef.current.contains(e.target)) {
+        close();
+      }
+    };
+    const handleKey = (e) => {
+      if (e.key === 'Escape') close();
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [isOpen, close]);
+
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  
+  useEffect(() => {
+  console.log('results →', results);    // add this line temporarily
+}, [results]);
+
   /* Initial suggestions (recent or top‑3) */
   useEffect(() => {
     if (!currentUser) return;
@@ -67,7 +92,7 @@ export default function SearchDrawer() {
   }, [query]);
 
   return (
-    <div className={`fc-drawer ${isOpen ? 'open' : ''}`}>
+    <div ref={drawerRef} className={`fc-drawer ${isOpen ? 'open' : ''}`}>
       <header>
         <input
           autoFocus
@@ -104,5 +129,8 @@ export default function SearchDrawer() {
         ))}
       </ul>
     </div>
+    
+
   );
+  
 }

@@ -777,7 +777,7 @@ body {
 .fc-drawer {
   position: fixed;
   top: 0;
-  left: 250px; /* adjust based on sidebar */
+  left: 250px; /* matches sidebar width */
   width: 250px;
   height: 100vh;
   background: #A9A9A9;
@@ -788,8 +788,6 @@ body {
   padding: 16px;
   display: flex;
   flex-direction: column;
-
-  /* hide interaction when closed */
   visibility: hidden;
   pointer-events: none;
 }
@@ -800,13 +798,15 @@ body {
   pointer-events: auto;
 }
 
+
 /* Reset + style search button same as link */
 .fc-link-button {
   all: unset;
   cursor: pointer;
-  display: inline-flex; /* inline-flex prevents full-width expansion */
+  display: flex; /* inline-flex prevents full-width expansion */
   align-items: center;
   gap: 12px;
+  width: 205px;
   padding: 12px 8px;
   border-radius: 8px;
   color: inherit;

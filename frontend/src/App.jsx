@@ -49,8 +49,6 @@ export default function App() {
             {/* protected without layout */}
             <Route path="/quiz" element={<Quiz />} />
           </Route>
-
-          <Route path="*" element={<Navigate to="/intro" replace />} />
         </Routes>
       </Router>
       </SearchDrawerProvider>
