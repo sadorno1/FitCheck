@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FiHeart, FiChevronRight, FiUserPlus, FiPlus } from "react-icons/fi";
+import { FiHeart, FiChevronRight,FiChevronLeft, FiUserPlus, FiPlus } from "react-icons/fi";
 import { getAuth } from "firebase/auth";
 import "./style.css";
 
@@ -11,6 +11,7 @@ function FollowCircle({ user }) {
     </div>
   );
 }
+
 
 function PostCard({ post, onToggleLike }) {
   const {
@@ -24,16 +25,33 @@ function PostCard({ post, onToggleLike }) {
     clothes = [],
   } = post;
 
+  // slider state
+  const [showOutfit, setShowOutfit] = useState(false);
+  const [index, setIndex] = useState(0);
+
+  const openSlider = (i) => {
+    setIndex(i);
+    setShowOutfit(true);
+  };
+  const next = () => setIndex((i) => (i + 1) % clothes.length);
+  const prev = () => setIndex((i) => (i - 1 + clothes.length) % clothes.length);
+  const close = () => setShowOutfit(false);
+
   return (
     <div className="post-card">
-      {/* left : main photo */}
+      {/* ---- left side ---- */}
       <div className="post-main">
         <div className="post-header">
           <img src={avatar_url} alt={username} className="post-avatar" />
           <span className="post-username">{username}</span>
         </div>
 
-        <img src={image_url} alt={caption} className="post-image" />
+        <img
+          src={image_url}
+          alt={caption}
+          className="post-image"
+          onClick={close} /* tap main photo to exit slider */
+        />
 
         <div className="post-actions">
           <button
@@ -48,22 +66,44 @@ function PostCard({ post, onToggleLike }) {
         {caption && <p className="post-caption">{caption}</p>}
       </div>
 
-      {/* right : clothes breakdown */}
+      {/* ---- right strip ---- */}
       {clothes.length > 0 && (
-        <div className="post-outfit">
-          {clothes.map((c) => (
+        <div className="post-outfit-strip">
+          {clothes.map((c, i) => (
             <img
               key={c.id}
               src={c.image_url}
               alt=""
-              className="outfit-piece"
+              className="outfit-thumb"
+              onClick={() => openSlider(i)}
             />
           ))}
+        </div>
+      )}
+
+      {/* ---- slider overlay ---- */}
+      {showOutfit && (
+        <div className="outfit-slider" onClick={close}>
+          <button className="nav left" onClick={(e) => { e.stopPropagation(); prev(); }}>
+            <FiChevronLeft />
+          </button>
+
+          <img
+            src={clothes[index].image_url}
+            alt=""
+            className="outfit-large"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <button className="nav right" onClick={(e) => { e.stopPropagation(); next(); }}>
+            <FiChevronRight />
+          </button>
         </div>
       )}
     </div>
   );
 }
+
 
 
 export default function Feed() {
