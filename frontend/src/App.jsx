@@ -16,7 +16,8 @@ import Quiz        from "./components/quiz";
 import RequireAuth     from "./components/RequireAuth";
 import ProtectedLayout from "./components/ProtectedLayout";
 import Profile from "./components/profile"; 
-
+import SearchDrawer from "./components/search";
+import { SearchDrawerProvider } from "./contexts/SearchDrawerContext";
 import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
 
@@ -24,8 +25,12 @@ export default function App() {
   // localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
   return (
     <AuthProvider>
+        <SearchDrawerProvider>
       <Router>
+          <SearchDrawer />
+
         <Routes>
+  
           {/* public */}
           <Route path="/intro"    element={<Intro />} />
           <Route path="/login"    element={<Login />} />
@@ -38,6 +43,7 @@ export default function App() {
               <Route path="/closet"      element={<ClosetView />} />
               <Route path="/upload-item" element={<UploadItem />} />
               <Route path="/profile"       element={<Profile />} />
+              <Route path="/user/:id" element={<Profile />} />
             </Route>
 
             {/* protected without layout */}
@@ -47,6 +53,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/intro" replace />} />
         </Routes>
       </Router>
+      </SearchDrawerProvider>
     </AuthProvider>
   );
 }

@@ -20,7 +20,7 @@ const Login = () => {
         localStorage.setItem("hasCompletedQuiz", "true");
         navigate("/quiz");
       } else {
-        navigate("/closet");
+        navigate("/");
       }
 
     } catch (err) {

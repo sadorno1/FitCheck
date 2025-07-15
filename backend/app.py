@@ -8,7 +8,8 @@ from db.store_quiz_result import store_quiz_result
 from db.init_db import (
     init_db, DB_NAME, get_or_create_user_id,sql_query,
     create_post, toggle_like, toggle_follow, get_feed, get_following,
-    add_clothes_to_post, clothes_for_post
+    add_clothes_to_post, clothes_for_post, search_users,
+    recent_searches, top_users  
 )
 from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result   import store_quiz_result
@@ -153,6 +154,21 @@ def api_get_following(uid):
     user_id = get_or_create_user_id(target_uid)
     following = get_following(user_id)
     return {"following": following}
+
+@app.get("/search")
+@require_auth
+def api_search_users():
+    q = request.args.get("q", "").strip()
+    uid = g.current_user["uid"]
+    user_id = get_or_create_user_id(uid)
+
+    if not q:
+        results = recent_searches(user_id)
+    else:
+        results = search_users(q, user_id)
+
+    return {"results": [dict(r) for r in results]}
+
 
 # ─────────────────────────────────────────────────────────────────── #
 if __name__ == "__main__":

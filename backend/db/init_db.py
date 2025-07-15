@@ -88,7 +88,18 @@ def init_db():
         FOREIGN KEY (post_id)  REFERENCES posts(id)   ON DELETE CASCADE,
         FOREIGN KEY (clothes_id) REFERENCES clothes(id) ON DELETE CASCADE
     )
+    """,
     """
+CREATE TABLE IF NOT EXISTS recent_searches (
+    user_id      INTEGER NOT NULL,
+    searched_id  INTEGER NOT NULL,
+    created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, searched_id),
+    FOREIGN KEY (user_id)     REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (searched_id) REFERENCES users(id) ON DELETE CASCADE
+)
+"""
+
     ]
 
     for stmt in statements:
@@ -233,3 +244,42 @@ def clothes_for_post(post_id: int) -> list[dict]:
         WHERE pc.post_id = ?
     """, (post_id,), fetch=True)
     return [dict(r) for r in rows]
+
+#searches
+#search routes
+def top_users(limit: int, current_id: int):
+    return sql_query("""
+        SELECT u.id, u.username, u.avatar_url,
+               EXISTS (SELECT 1 FROM follows
+                       WHERE follower_id = ? AND followed_id = u.id) AS isFollowing,
+               (SELECT COUNT(*) FROM follows f WHERE f.followed_id = u.id) AS followers
+        FROM users u
+        WHERE u.id != ?
+        ORDER BY followers DESC
+        LIMIT ?
+    """, (current_id, current_id, limit), fetch=True)
+
+def search_users(q: str, current_id: int):
+    q = f'%{q.lower()}%'
+    return sql_query("""
+        SELECT u.id, u.username, u.avatar_url,
+               EXISTS (SELECT 1 FROM follows
+                       WHERE follower_id = ? AND followed_id = u.id) AS isFollowing
+        FROM users u
+        WHERE LOWER(u.username) LIKE ?
+          AND u.id != ?
+        LIMIT 20
+    """, (current_id, q, current_id), fetch=True)
+
+def recent_searches(uid: int):
+    return sql_query("""
+        SELECT DISTINCT s.searched_id AS id,
+               u.username, u.avatar_url,
+               EXISTS (SELECT 1 FROM follows
+                       WHERE follower_id = ? AND followed_id = u.id) AS isFollowing
+        FROM recent_searches s
+        JOIN users u ON u.id = s.searched_id
+        WHERE s.user_id = ?
+        ORDER BY s.created_at DESC
+        LIMIT 10
+    """, (uid, uid), fetch=True)
