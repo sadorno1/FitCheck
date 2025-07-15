@@ -4,7 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 DB_NAME = BASE_DIR / "fitcheck.db"
 
-def sql_query(query: str, params: tuple =(), fetch: bool = False):
+def sql_query(query, params, fetch = False):
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     cur  = conn.cursor()
@@ -122,7 +122,7 @@ def get_or_create_user_id(firebase_uid):
     return new_id
 
 
-def create_post(author_id: int, image_url: str, caption: str = "") -> int:
+def create_post(author_id, image_url, caption = ""):
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -138,7 +138,7 @@ def create_post(author_id: int, image_url: str, caption: str = "") -> int:
 
 
 
-def toggle_like(user_id: int, post_id: int):
+def toggle_like(user_id, post_id):
     liked = sql_query(
         "SELECT 1 FROM likes WHERE post_id = ? AND user_id = ?",
         (post_id, user_id),
@@ -167,7 +167,7 @@ def toggle_like(user_id: int, post_id: int):
         )
 
 
-def toggle_follow(follower_id: int, followed_id: int):
+def toggle_follow(follower_id, followed_id):
     if follower_id == followed_id:
         return  
     exists = sql_query(
@@ -188,11 +188,7 @@ def toggle_follow(follower_id: int, followed_id: int):
         )
 
 
-def get_feed(
-    user_id: int,
-    limit: int = 20,
-    offset: int = 0
-) -> list[dict]:
+def get_feed(user_id, limit=20, offset=0):
     rows = sql_query(
         "SELECT followed_id FROM follows WHERE follower_id = ?",
         (user_id,),
@@ -223,7 +219,7 @@ def get_feed(
 
     return posts
 
-def get_following(user_id: int) -> list[dict]:
+def get_following(user_id):
     rows = sql_query("""
         SELECT u.id, u.username, u.avatar_url
         FROM follows f
@@ -232,14 +228,14 @@ def get_following(user_id: int) -> list[dict]:
     """, (user_id,), fetch=True)
     return [dict(r) for r in rows]
 
-def add_clothes_to_post(post_id: int, clothes_ids: list[int]):
+def add_clothes_to_post(post_id, clothes_ids):
     for cid in clothes_ids:
         sql_query(
             "INSERT OR IGNORE INTO post_clothes (post_id, clothes_id) VALUES (?, ?)",
             (post_id, cid)
         )
 
-def clothes_for_post(post_id: int) -> list[dict]:
+def clothes_for_post(post_id) -> list[dict]:
     rows = sql_query("""
         SELECT c.id, c.image_url
         FROM post_clothes pc
@@ -250,7 +246,7 @@ def clothes_for_post(post_id: int) -> list[dict]:
 
 #searches
 #search routes
-def top_users(limit: int, current_id: int):
+def top_users(limit, current_id):
     return sql_query("""
         SELECT u.id, u.username, u.avatar_url,
                EXISTS (SELECT 1 FROM follows
@@ -262,7 +258,7 @@ def top_users(limit: int, current_id: int):
         LIMIT ?
     """, (current_id, current_id, limit), fetch=True)
 
-def search_users(q: str, current_id: int):
+def search_users(q, current_id):
     q_pattern = f'%{q.lower()}%'
     return sql_query(
         """
@@ -286,21 +282,21 @@ def search_users(q: str, current_id: int):
     )
 
 
-def recent_searches(uid: int):
+def recent_searches(uid):
     return sql_query("""
-                SELECT DISTINCT
-        s.searched_id   AS id,
-        u.username,
-        u.avatar_url,
-        EXISTS(
-            SELECT 1
-            FROM follows
-            WHERE follower_id = :uid
-            AND followed_id = u.id
-        ) AS isFollowing
+        SELECT DISTINCT
+            s.searched_id AS id,
+            u.username,
+            u.avatar_url,
+            EXISTS(
+                SELECT 1
+                FROM follows
+                WHERE follower_id = ?
+                AND followed_id = u.id
+            ) AS isFollowing
         FROM recent_searches s
         JOIN users u ON u.id = s.searched_id
-        WHERE s.user_id = :uid
+        WHERE s.user_id = ?
         ORDER BY s.created_at DESC
         LIMIT 10
     """, (uid, uid), fetch=True)
