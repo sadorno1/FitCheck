@@ -13,10 +13,10 @@ import "./style.css";
 const NAV_ITEMS = [
   { label: "Home",           route: "/",           icon: FiHome },
   { label: "Search",         route: "/quiz",     icon: FiSearch },
+  { label: "Post",           route: "/",icon: FiPlusSquare },
+  { label: "Saved",          route: "/saved",      icon: FiBookmark },
   { label: "My Closet",      route: "/closet",     icon: FiBox },
   { label: "Virtual Try‑On", route: "/try-on",     icon: FiCamera },
-  { label: "Saved",          route: "/saved",      icon: FiBookmark },
-  { label: "Post",           route: "/upload-item",icon: FiPlusSquare },
   { label: "Profile",        route: "/profile",    icon: FiUser },
 ];
 

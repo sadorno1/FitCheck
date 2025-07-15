@@ -30,7 +30,6 @@ export default function App() {
           <Route path="/intro"    element={<Intro />} />
           <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} />
 
           {/* protected with layout */}
           <Route element={<RequireAuth />}>
@@ -38,6 +37,7 @@ export default function App() {
               <Route path="/"            element={<Feed />} />
               <Route path="/closet"      element={<ClosetView />} />
               <Route path="/upload-item" element={<UploadItem />} />
+              <Route path="/profile"       element={<Profile />} />
             </Route>
 
             {/* protected without layout */}
