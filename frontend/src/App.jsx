@@ -15,6 +15,7 @@ import Feed        from "./components/feed";
 import Quiz        from "./components/quiz";
 import RequireAuth     from "./components/RequireAuth";
 import ProtectedLayout from "./components/ProtectedLayout";
+import Profile from "./components/profile"; 
 
 import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/intro"    element={<Intro />} />
           <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
 
           {/* protected with layout */}
           <Route element={<RequireAuth />}>

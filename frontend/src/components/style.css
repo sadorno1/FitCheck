@@ -642,3 +642,132 @@ body {
   background: #fff;
   cursor: pointer;
 }
+
+/* ──────────────── Profile Page ──────────────── */
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.profile-user {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #6e1d9f;
+  margin: 0;
+}
+
+.profile-email {
+  font-size: 1rem;
+  color: #555;
+  margin-top: 4px;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.profile-button {
+  background: #6e1d9f;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.profile-button:hover {
+  background: #55157d;
+}
+
+.profile-posts {
+  margin-top: 2rem;
+}
+
+.profile-posts h2 {
+  font-size: 1.5rem;
+  color: #6e1d9f;
+  margin-bottom: 1rem;
+}
+
+.profile-empty {
+  text-align: center;
+  padding: 2rem;
+  border: 2px dashed #d9c7f0;
+  border-radius: 12px;
+  color: #555;
+}
+
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #d9c7f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.edit-avatar-btn {
+  background: none;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  color: #6e1d9f;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.edit-avatar-btn:hover {
+  background-color: #f5ebff;
+  border-color: #6e1d9f;
+}
+
+.profile-info .profile-user {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.profile-info .profile-email {
+  font-size: 0.95rem;
+  color: #555;
+  margin: 4px 0;
+}
+
+.profile-bio {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+}

@@ -1,99 +1,105 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getAuth, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { auth } from "../firebase/firebase";
+import { doSignOut } from "../firebase/auth";
 import "./style.css";
 
-export default function UserProfile() {
-  const [userData, setUserData] = useState(null);
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [posts, setPosts] = useState([]);
+const Profile = () => {
   const navigate = useNavigate();
-
-  const auth = getAuth();
-  const db = getFirestore();
-  const storage = getStorage();
+  const [user, setUser] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchProfileAndPosts = async () => {
       const user = auth.currentUser;
-      if (!user) return navigate('/login');
+      if (!user) return;
+      const token = await user.getIdToken();
 
-      const docRef = doc(db, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
+      setUser({
+        displayName: user.displayName || "User",
+        photoURL: user.photoURL || "/default-avatar.png",
+        email: user.email,
+        bio: "Add a short bio about yourself.", // You can make this editable later
+      });
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setUserData(data);
-
-        if (data.avatarPath) {
-          const url = await getDownloadURL(ref(storage, data.avatarPath));
-          setAvatarUrl(url);
-        }
-
-        if (data.posts) {
-          setPosts(data.posts);
-        }
+      try {
+        const res = await fetch("http://localhost:5000/get_my_posts", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setPosts(data);
+      } catch (err) {
+        console.error("Failed to fetch posts:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchUserData();
+    fetchProfileAndPosts();
   }, []);
 
   const handleLogout = async () => {
-    await signOut(auth);
-    navigate('/login');
+    await doSignOut();
+    navigate("/login");
   };
 
-  const handleEditPreferences = () => {
-    navigate('/quiz'); // Route to quiz/preferences
-  };
+  if (loading) return <div className="closet-loading">Loading…</div>;
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
-      <div className="flex flex-col items-center space-y-4">
-        <img
-          src={avatarUrl || '/placeholder-avatar.png'}
-          alt="Avatar"
-          className="w-24 h-24 rounded-full object-cover"
-        />
-        <h2 className="text-2xl font-bold">{userData?.username || 'Username'}</h2>
-        <p className="text-center text-gray-600">{userData?.bio || 'No bio available.'}</p>
+    <div className="profile-container">
+      <div className="profile-header">
+        <div className="profile-avatar-section">
+          <img
+            src={user.photoURL}
+            alt="avatar"
+            className="profile-avatar"
+          />
+          <button className="edit-avatar-btn">Edit Avatar</button>
+        </div>
 
-        <div className="flex gap-4">
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={handleEditPreferences}
-          >
-            Preferences
-          </button>
-          <button
-            className="bg-red-500 text-white px-4 py-2 rounded"
-            onClick={handleLogout}
-          >
-            Log Out
-          </button>
+        <div className="profile-info">
+          <h2 className="profile-user">{user.displayName}</h2>
+          <p className="profile-email">{user.email}</p>
+          <p className="profile-bio">{user.bio}</p>
+          <div className="profile-actions">
+            <button
+              className="secondary-btn"
+              onClick={() => navigate("/quiz")}
+            >
+              Edit Preferences
+            </button>
+            <button className="secondary-btn" onClick={handleLogout}>
+              Log Out
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="mt-8">
-        <h3 className="text-xl font-semibold mb-4">My Posts</h3>
-        {posts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {posts.map((post, idx) => (
+      <h3 className="profile-subtitle">My Posts</h3>
+
+      {posts.length === 0 ? (
+        <div className="closet-empty">
+          <p>You haven’t posted anything yet.</p>
+        </div>
+      ) : (
+        <div className="closet-grid">
+          {posts.map((post) => (
+            <div key={post.id} className="closet-card">
               <img
-                key={idx}
-                src={post.imageUrl}
-                alt={`Post ${idx + 1}`}
-                className="rounded shadow"
+                className="closet-img"
+                src={post.image_url}
+                alt={post.caption || "Post"}
               />
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">No posts uploaded yet.</p>
-        )}
-      </div>
+              <div className="closet-tags">
+                {post.caption && <span className="tag">{post.caption}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default Profile;
