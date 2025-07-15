@@ -20,7 +20,7 @@ import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
 
 export default function App() {
-  //localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
+  // localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
   return (
     <AuthProvider>
       <Router>

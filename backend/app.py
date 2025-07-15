@@ -7,7 +7,8 @@ from services.firebase_upload import upload_to_firebase
 from db.store_quiz_result import store_quiz_result
 from db.init_db import (
     init_db, DB_NAME, get_or_create_user_id,sql_query,
-    create_post, toggle_like, toggle_follow, get_feed, get_following
+    create_post, toggle_like, toggle_follow, get_feed, get_following,
+    add_clothes_to_post
 )
 from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result   import store_quiz_result
@@ -54,7 +55,8 @@ def submit_quiz():
 
     avatar_file = request.files.get("avatar")
     if avatar_file:
-        avatar_url = upload_to_firebase(firebase_uid, avatar_file)
+        img_bytes   = avatar_file.read()                 
+        avatar_url  = upload_to_firebase(img_bytes, firebase_uid)  
     else:
         avatar_url = ""
 
@@ -89,15 +91,19 @@ def check_username():
 @app.post("/posts")
 @require_auth
 def api_create_post():
-    uid      = g.current_user["uid"]
-    file     = request.files["image"]        
-    caption  = request.form.get("caption", "")
+    uid   = g.current_user["uid"]
+    file  = request.files["image"]
+    caption = request.form.get("caption", "")
+    clothes_ids = request.form.get("clothes")   
+    clothes_ids = json.loads(clothes_ids) if clothes_ids else []
 
-    img_bytes = file.read()                   
-    image_url = upload_to_firebase(img_bytes, uid)
+    img_bytes  = file.read()
+    image_url  = upload_to_firebase(img_bytes, uid)
 
     author_id = get_or_create_user_id(uid)
     post_id   = create_post(author_id, image_url, caption)
+    add_clothes_to_post(post_id, clothes_ids)
+
     return {"post_id": post_id}, 201
 
 

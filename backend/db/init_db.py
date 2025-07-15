@@ -80,6 +80,15 @@ def init_db():
         """,
         # index for fast feed ordering
         "CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);",
+         """
+    CREATE TABLE IF NOT EXISTS post_clothes (
+        post_id   INTEGER NOT NULL,
+        clothes_id INTEGER NOT NULL,
+        PRIMARY KEY (post_id, clothes_id),
+        FOREIGN KEY (post_id)  REFERENCES posts(id)   ON DELETE CASCADE,
+        FOREIGN KEY (clothes_id) REFERENCES clothes(id) ON DELETE CASCADE
+    )
+    """
     ]
 
     for stmt in statements:
@@ -194,4 +203,20 @@ def get_following(user_id: int) -> list[dict]:
         JOIN users u ON f.followed_id = u.id
         WHERE f.follower_id = ?
     """, (user_id,), fetch=True)
+    return [dict(r) for r in rows]
+
+def add_clothes_to_post(post_id: int, clothes_ids: list[int]):
+    for cid in clothes_ids:
+        sql_query(
+            "INSERT OR IGNORE INTO post_clothes (post_id, clothes_id) VALUES (?, ?)",
+            (post_id, cid)
+        )
+
+def clothes_for_post(post_id: int) -> list[dict]:
+    rows = sql_query("""
+        SELECT c.id, c.image_url
+        FROM post_clothes pc
+        JOIN clothes c ON pc.clothes_id = c.id
+        WHERE pc.post_id = ?
+    """, (post_id,), fetch=True)
     return [dict(r) for r in rows]

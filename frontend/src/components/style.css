@@ -120,11 +120,7 @@ body {
 
 /* closet_view */
 /* grid container */
-.closet-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 1rem;
-}
+
 .closet-card {
   width: 160px;               /* use same min-width as grid cell */
   background: #fff;
@@ -168,21 +164,27 @@ body {
   /* centre the whole block horizontally */
   max-width: 1000px;
   width: 100%;
-  margin: 0 auto;              /* <— centres the element */
+  margin: 0 auto;             
   padding: 3rem 1.5rem;
   display: flex;
   flex-direction: column;
-  align-items: center;         /* <— centres children inside */
+  align-items: center;        
 }
 
 /* header now stretches but its content is centred */
 .closet-header {
   width: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: space-between; 
   margin-bottom: 2rem;
+  flex-wrap: wrap; 
 }
+.closet-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 
 .closet-header h2 {
   font-size: 1.8rem;
@@ -208,15 +210,15 @@ body {
   width: 100%;
 }
 
-/* optional: centre lone buttons in empty state */
+/* centre lone buttons in empty state */
 .closet-empty .primary-btn {
   margin-top: 1rem;
 }
 
 /* keep the nicer button styles */
 .primary-btn {
-  display: inline-block;
-  padding: 12px 28px;
+  display: flex;
+  padding: 10px 22px;
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
@@ -224,6 +226,7 @@ body {
   border: none;
   border-radius: 10px;
   cursor: pointer;
+  align-items: center;
   box-shadow: 0 4px 12px rgba(110, 29, 159, 0.25);
   transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
 }
@@ -357,10 +360,13 @@ body {
   font-size: 22px;
 }
 .feed-container    { max-width: 550px; margin: 0 auto; }
-.post-card         { background:#fff;border:1px solid #ddd;margin-bottom:24px;border-radius:8px;overflow:hidden; }
-.post-header       { display:flex;align-items:center;padding:12px 16px; }
+.post-card {
+  width: 420px;              /* smaller column */
+  max-width: 90%;
+  margin: 0 auto 24px;
+}.post-header       { display:flex;align-items:center;padding:12px 16px; }
 .post-avatar       { width:32px;height:32px;border-radius:50%;object-fit:cover;margin-right:8px; }
-.post-image        { width:100%;display:block; }
+.post-image        { width:90%;display:block; }
 .post-actions      { display:flex;align-items:center;padding:8px 16px; }
 .post-like-btn     { background:none;border:none;cursor:pointer;font-size:22px; }
 .post-like-btn.liked svg { fill:#ff385c; }   /* highlight when liked */
@@ -385,3 +391,95 @@ body {
 .dot { width:8px;height:8px;border-radius:50%;background:#bbb; }
 .dot--active { background:#6e1d9f; }
 .quiz-submit { display:flex;align-items:center;gap:6px;background:#6e1d9f;color:#fff;border:none;border-radius:6px;padding:10px 24px;cursor:pointer; }
+
+/*follow*/
+/* bigger follow circles with names */
+.follow-circle {
+  flex: 0 0 auto;
+  width: 90px;               /* bigger */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.follow-circle img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ccc;
+}
+.follow-name {
+  font-size: 0.75rem;
+  text-align: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
+/* follow strip tweaks (same as before, but adapt height) */
+.follow-strip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 8px 4px 12px;
+  scrollbar-width: none;
+}
+.follow-strip::-webkit-scrollbar { display: none; }
+
+/* arrow */
+.strip-arrow {
+  position: absolute;
+  right: 0;
+  top: 40px;                 /* align with circles */
+  transform: translateY(-50%);
+  background: white;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.1);
+}
+
+/* find friends button */
+.find-friends-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 0;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* empty‑state styling */
+.empty-state {
+  text-align: center;
+  margin: 40px 0;
+  color: #444;
+}
+.empty-big {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+.empty-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* keep previous follow/post styles from earlier response */

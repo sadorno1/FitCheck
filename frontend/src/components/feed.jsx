@@ -1,8 +1,16 @@
-// src/components/Feed.jsx
-import React, { useEffect, useState } from "react";
-import { FiHeart } from "react-icons/fi";
+import React, { useEffect, useRef, useState } from "react";
+import { FiHeart, FiChevronRight, FiUserPlus, FiPlus } from "react-icons/fi";
 import { getAuth } from "firebase/auth";
 import "./style.css";
+
+function FollowCircle({ user }) {
+  return (
+    <div className="follow-circle">
+      <img src={user.avatar_url} alt={user.username} />
+      <span className="follow-name">{user.username}</span>
+    </div>
+  );
+}
 
 function PostCard({ post, onToggleLike }) {
   const { id, username, avatar_url, image_url, caption, like_count, likedByMe } =
@@ -35,21 +43,29 @@ function PostCard({ post, onToggleLike }) {
 export default function Feed() {
   const auth = getAuth();
   const [posts, setPosts] = useState([]);
+  const [following, setFollowing] = useState([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const stripRef = useRef(null);
+  const [showArrow, setShowArrow] = useState(false);
+
+  const authedFetch = async (url, options = {}) => {
+    const idToken = await auth.currentUser.getIdToken();
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+  };
 
   const loadFeed = async (pageNum = 0) => {
     setLoading(true);
     try {
-      const idToken =
-        auth.currentUser && (await auth.currentUser.getIdToken());
-
-      const res = await fetch(
-        `http://localhost:5000/feed?page=${pageNum}`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${idToken}` },
-        }
+      const res = await authedFetch(
+        `http://localhost:5000/feed?page=${pageNum}`
       );
       const data = await res.json();
       setPosts((prev) =>
@@ -62,13 +78,29 @@ export default function Feed() {
     }
   };
 
+  const loadFollowing = async () => {
+    try {
+      const res = await authedFetch(
+        "http://localhost:5000/users/me/following"
+      );
+      const data = await res.json();
+      setFollowing(data.following || []);
+      setTimeout(() => {
+        const el = stripRef.current;
+        setShowArrow(el && el.scrollWidth > el.clientWidth);
+      }, 0);
+    } catch (err) {
+      console.error("Failed to load following:", err);
+    }
+  };
+
   useEffect(() => {
     loadFeed();
+    loadFollowing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleLike = async (postId) => {
-    // optimistic update
     setPosts((prev) =>
       prev.map((p) =>
         p.id === postId
@@ -82,16 +114,9 @@ export default function Feed() {
     );
 
     try {
-      const idToken =
-        auth.currentUser && (await auth.currentUser.getIdToken());
-
-      await fetch(
-        `http://localhost:5000/posts/${postId}/like`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${idToken}` },
-        }
-      );
+      await authedFetch(`http://localhost:5000/posts/${postId}/like`, {
+        method: "POST",
+      });
     } catch (err) {
       console.error("Failed to toggle like:", err);
     }
@@ -103,15 +128,99 @@ export default function Feed() {
     setPage(next);
   };
 
+  const scrollRight = () => {
+    stripRef.current.scrollBy({ left: 240, behavior: "smooth" });
+  };
+
+  /* -------- empty‑state helpers -------- */
+  const noFriends = following.length === 0;
+  const noPosts   = posts.length === 0;
+
   return (
     <div className="feed-container">
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} onToggleLike={handleToggleLike} />
+      {/* ── Follow strip / find‑friends button ───────────── */}
+{noFriends ? (
+  /* Show the single find‑friends button on top
+     **only** if there ARE posts (so feed isn't empty)     */
+  noPosts ? null : (
+    <button
+      className="find-friends-btn"
+      onClick={() => alert("TODO: open search")}
+    >
+      <FiUserPlus /> Find friends
+    </button>
+  )
+) : (
+  /* Normal strip when you follow people */
+  <div className="follow-strip-wrapper">
+    <div className="follow-strip" ref={stripRef}>
+      {following.map((u) => (
+        <FollowCircle key={u.id} user={u} />
       ))}
-
-      <button className="load-more-btn" onClick={loadMore} disabled={loading}>
-        {loading ? "Loading…" : "Load More"}
+    </div>
+    {showArrow && (
+      <button className="strip-arrow" onClick={scrollRight}>
+        <FiChevronRight />
       </button>
+    )}
+  </div>
+)}
+
+
+      {/* Empty‑state vs posts list */}
+      {noPosts ? (
+        <div className="empty-state">
+          {noFriends ? (
+            <>
+              <p className="empty-big">Your feed is empty</p>
+              <p>Follow people or share your first look!</p>
+              <div className="empty-actions">
+                <button
+                  className="empty-btn"
+                  onClick={() => alert("TODO: open search")}
+                >
+                  <FiUserPlus /> Find friends
+                </button>
+                <button
+                  className="empty-btn"
+                  onClick={() => alert("TODO: open upload")}
+                >
+                  <FiPlus /> Post photo
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="empty-big">Nothing here… yet</p>
+              <p>Your friends haven’t posted anything. Be the first!</p>
+              <button
+                className="empty-btn"
+                onClick={() => alert("TODO: open upload")}
+              >
+                <FiPlus /> Post photo
+              </button>
+            </>
+          )}
+        </div>
+      ) : (
+        <>
+          {posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onToggleLike={handleToggleLike}
+            />
+          ))}
+
+          <button
+            className="load-more-btn"
+            onClick={loadMore}
+            disabled={loading}
+          >
+            {loading ? "Loading…" : "Load More"}
+          </button>
+        </>
+      )}
     </div>
   );
 }

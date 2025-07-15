@@ -15,7 +15,7 @@ const ClosetView = () => {
       if (!user) return;                             
 
       const idToken = await user.getIdToken();
-      console.log("🔥 Firebase ID Token:", idToken);  
+      console.log(" Firebase ID Token:", idToken);  
       try {
         const res = await fetch("http://localhost:5000/get_closet_by_user", {
           headers: { Authorization: `Bearer ${idToken}` },
@@ -40,14 +40,18 @@ const ClosetView = () => {
   return (
     <div className="closet-container">
       <div className="closet-header">
+          <div className="closet-title-wrapper">
+
         <h2>My Closet</h2>
         <button
           className="primary-btn"
-          onClick={() => navigate("/upload-item")}   // adjust route as needed
+          onClick={() => navigate("/upload-item")}   
         >
           + Add Clothes
         </button>
       </div>
+      </div>
+
 
       {items.length === 0 ? (
         <div className="closet-empty">
