@@ -19,4 +19,6 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 const db = getFirestore(app);
 
-export { app, auth, analytics, storage, db }; // ✅ Make sure all 5 are
+console.log("Project ID:", process.env.REACT_APP_FIREBASE_PROJECT_ID);
+
+export { app, auth, analytics, storage, db }; // ✅ export all needed modules

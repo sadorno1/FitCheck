@@ -1,44 +1,65 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs
+} from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
-export default function UserProfile() {
+export default function Profile() {
   const [userData, setUserData] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [posts, setPosts] = useState([]);
+  const [successMessage, setSuccessMessage] = useState('');
+
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ this must be inside the component
 
   const auth = getAuth();
   const db = getFirestore();
   const storage = getStorage();
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchUserDataAndPosts = async () => {
       const user = auth.currentUser;
       if (!user) return navigate('/login');
 
-      const docRef = doc(db, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
         setUserData(data);
 
         if (data.avatarPath) {
           const url = await getDownloadURL(ref(storage, data.avatarPath));
           setAvatarUrl(url);
         }
-
-        if (data.posts) {
-          setPosts(data.posts);
-        }
       }
+
+      const postsQuery = query(
+        collection(db, 'posts'),
+        where('userId', '==', user.uid)
+      );
+      const snapshot = await getDocs(postsQuery);
+      const userPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPosts(userPosts);
     };
 
-    fetchUserData();
+    fetchUserDataAndPosts();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.fromPostSuccess) {
+      setSuccessMessage("✅ Posted successfully! Check your feed below.");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    }
+  }, [location]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -46,7 +67,7 @@ export default function UserProfile() {
   };
 
   const handleEditPreferences = () => {
-    navigate('/quiz'); // Route to quiz/preferences
+    navigate('/quiz');
   };
 
   return (
@@ -57,8 +78,12 @@ export default function UserProfile() {
           alt="Avatar"
           className="w-24 h-24 rounded-full object-cover"
         />
-        <h2 className="text-2xl font-bold">{userData?.username || 'Username'}</h2>
-        <p className="text-center text-gray-600">{userData?.bio || 'No bio available.'}</p>
+        <h2 className="text-2xl font-bold">
+          {userData?.username || 'Username'}
+        </h2>
+        <p className="text-center text-gray-600">
+          {userData?.bio || 'No bio available.'}
+        </p>
 
         <div className="flex gap-4">
           <button
@@ -76,17 +101,25 @@ export default function UserProfile() {
         </div>
       </div>
 
+      {successMessage && (
+        <div className="bg-green-100 text-green-800 px-4 py-2 rounded mb-4 text-center mt-6">
+          {successMessage}
+        </div>
+      )}
+
       <div className="mt-8">
         <h3 className="text-xl font-semibold mb-4">My Posts</h3>
         {posts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {posts.map((post, idx) => (
-              <img
-                key={idx}
-                src={post.imageUrl}
-                alt={`Post ${idx + 1}`}
-                className="rounded shadow"
-              />
+              <div key={post.id} className="rounded shadow">
+                <img
+                  src={post.imageUrl}
+                  alt={`Post ${idx + 1}`}
+                  className="w-full h-auto rounded"
+                />
+                <p className="text-sm mt-1 px-1 text-gray-700">{post.comment}</p>
+              </div>
             ))}
           </div>
         ) : (
