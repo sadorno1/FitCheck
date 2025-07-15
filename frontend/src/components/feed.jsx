@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FiHeart, FiChevronRight,FiChevronLeft, FiUserPlus, FiPlus } from "react-icons/fi";
+import { useSearchDrawer } from '../contexts/SearchDrawerContext';
 import { getAuth } from "firebase/auth";
 import "./style.css";
 
@@ -112,6 +113,8 @@ export default function Feed() {
   const [following, setFollowing] = useState([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { open: openSearch } = useSearchDrawer();
+
 
   const stripRef = useRef(null);
   const [showArrow, setShowArrow] = useState(false);
@@ -150,6 +153,8 @@ export default function Feed() {
         "http://localhost:5000/users/me/following"
       );
       const data = await res.json();
+      console.log("API /users/me/following →", data);
+
       setFollowing(data.following || []);
       setTimeout(() => {
         const el = stripRef.current;
@@ -211,7 +216,7 @@ export default function Feed() {
   noPosts ? null : (
     <button
       className="find-friends-btn"
-      onClick={() => alert("TODO: open search")}
+      onClick={openSearch}
     >
       <FiUserPlus /> Find friends
     </button>
@@ -243,7 +248,7 @@ export default function Feed() {
               <div className="empty-actions">
                 <button
                   className="empty-btn"
-                  onClick={() => alert("TODO: open search")}
+                  onClick={openSearch}
                 >
                   <FiUserPlus /> Find friends
                 </button>

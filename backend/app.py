@@ -15,14 +15,15 @@ from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result   import store_quiz_result
 
 init_db()
-rows = sql_query("SELECT * FROM post_clothes WHERE post_id = ?", (0,), fetch=True)
-print([dict(row) for row in rows])
-clothing_item = sql_query("SELECT * FROM clothes WHERE id = ?", (1,), fetch=True)
-if clothing_item:
-    print(dict(clothing_item[0]))
-else:
-    print("Clothing item not found.")
+# Replace post_id_value with the ID of the post you care about
+all_users = sql_query(
+    "SELECT * FROM users",
+    fetch=True
+)
 
+# Print each as a dict
+for user_row in all_users:
+    print(dict(user_row))
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -122,15 +123,14 @@ def api_like(post_id):
     toggle_like(user_id, post_id)
     return {}, 204
 
-
-@app.post("/users/<string:target_uid>/follow")
+@app.post("/users/<int:target_id>/follow")
 @require_auth
-def api_follow(target_uid):
-    follower_uid = g.current_user["uid"]
-    follower_id  = get_or_create_user_id(follower_uid)
-    followed_id  = get_or_create_user_id(target_uid)
-    toggle_follow(follower_id, followed_id)
+def api_follow(target_id):
+    # current user’s numeric ID
+    follower_id = get_or_create_user_id(g.current_user["uid"])
+    toggle_follow(follower_id, target_id)
     return {}, 204
+
 
 
 @app.get("/feed")
@@ -147,13 +147,20 @@ def api_feed():
 @require_auth
 def api_get_following(uid):
     current_uid = g.current_user["uid"]
-    if uid != "me" and uid != current_uid:
+    if uid not in ("me", current_uid):
         return {"error": "Unauthorized"}, 403
 
     target_uid = current_uid if uid == "me" else uid
+    app.logger.debug(f"Requested follow list for Firebase UID {target_uid}")
+
     user_id = get_or_create_user_id(target_uid)
+    app.logger.debug(f"Mapped to local user_id {user_id}")
+
     following = get_following(user_id)
+    app.logger.debug(f"get_following returned {following!r}")
+
     return {"following": following}
+
 
 @app.get("/search")
 @require_auth
@@ -163,11 +170,16 @@ def api_search_users():
     user_id = get_or_create_user_id(uid)
 
     if not q:
-        results = recent_searches(user_id)
+        rows = recent_searches(user_id)
     else:
-        results = search_users(q, user_id)
+        rows = search_users(q, user_id)
 
-    return {"results": [dict(r) for r in results]}
+    results = []
+    for r in rows:
+        d = dict(r)
+        results.append(d)
+
+    return {"results": results}
 
 
 # ─────────────────────────────────────────────────────────────────── #

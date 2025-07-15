@@ -104,20 +104,23 @@ CREATE TABLE IF NOT EXISTS recent_searches (
 
     for stmt in statements:
         sql_query(stmt)
+    
 
 
-def get_or_create_user_id(firebase_uid: str) -> int:
-    row = sql_query(
-        "SELECT id FROM users WHERE firebase_uid = ?",
-        params=(firebase_uid,),
-        fetch=True,
-    )
+def get_or_create_user_id(firebase_uid):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM users WHERE firebase_uid = ?", (firebase_uid,))
+    row = cur.fetchone()
     if row:
-        return row[0]["id"]
-
-    sql_query("INSERT INTO users (firebase_uid) VALUES (?)", (firebase_uid,))
-    new_id = sql_query("SELECT last_insert_rowid()", fetch=True)[0][0]
+        conn.close()
+        return row[0]
+    cur.execute("INSERT INTO users (firebase_uid) VALUES (?)", (firebase_uid,))
+    new_id = cur.lastrowid
+    conn.commit()
+    conn.close()
     return new_id
+
 
 def create_post(author_id: int, image_url: str, caption: str = "") -> int:
     conn = sqlite3.connect(DB_NAME)
@@ -260,26 +263,44 @@ def top_users(limit: int, current_id: int):
     """, (current_id, current_id, limit), fetch=True)
 
 def search_users(q: str, current_id: int):
-    q = f'%{q.lower()}%'
-    return sql_query("""
-        SELECT u.id, u.username, u.avatar_url,
-               EXISTS (SELECT 1 FROM follows
-                       WHERE follower_id = ? AND followed_id = u.id) AS isFollowing
+    q_pattern = f'%{q.lower()}%'
+    return sql_query(
+        """
+        SELECT
+          u.id,
+          u.username,
+          u.avatar_url,
+          EXISTS(
+            SELECT 1
+            FROM follows
+            WHERE follower_id = ?     -- 1st bind
+              AND followed_id = u.id
+          ) AS isFollowing
         FROM users u
-        WHERE LOWER(u.username) LIKE ?
-          AND u.id != ?
+        WHERE LOWER(u.username) LIKE ?  -- 2nd bind
+          AND u.id != ?                 -- 3rd bind
         LIMIT 20
-    """, (current_id, q, current_id), fetch=True)
+        """,
+        (current_id, q_pattern, current_id),  
+        fetch=True
+    )
+
 
 def recent_searches(uid: int):
     return sql_query("""
-        SELECT DISTINCT s.searched_id AS id,
-               u.username, u.avatar_url,
-               EXISTS (SELECT 1 FROM follows
-                       WHERE follower_id = ? AND followed_id = u.id) AS isFollowing
+                SELECT DISTINCT
+        s.searched_id   AS id,
+        u.username,
+        u.avatar_url,
+        EXISTS(
+            SELECT 1
+            FROM follows
+            WHERE follower_id = :uid
+            AND followed_id = u.id
+        ) AS isFollowing
         FROM recent_searches s
         JOIN users u ON u.id = s.searched_id
-        WHERE s.user_id = ?
+        WHERE s.user_id = :uid
         ORDER BY s.created_at DESC
         LIMIT 10
     """, (uid, uid), fetch=True)
