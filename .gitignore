@@ -25,3 +25,5 @@ pyc
 *.njsproj
 *.sln
 *.sw?
+keys.json
+
