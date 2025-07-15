@@ -17,7 +17,7 @@ import "./style.css";
 const NAV_ITEMS = [
   { label: "Home",           route: "/",             icon: FiHome },
   { label: "Search",         route: "/search",       icon: FiSearch },
-  { label: "Post",           route: "/upload-item",  icon: FiPlusSquare }, // ✅ fixed path
+  { label: "Post",           route: "/post",  icon: FiPlusSquare }, 
   { label: "Saved",          route: "/saved",        icon: FiBookmark },
   { label: "My Closet",      route: "/closet",       icon: FiBox },
   { label: "Virtual Try‑On", route: "/try-on",       icon: FiCamera },

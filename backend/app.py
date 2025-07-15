@@ -181,6 +181,39 @@ def api_search_users():
 
     return {"results": results}
 
+@app.get("/posts/liked")
+@require_auth
+def api_liked_posts():
+    # 1) Map Firebase UID → local user ID
+    firebase_uid = g.current_user["uid"]
+    user_id = get_or_create_user_id(firebase_uid)
+
+    # 2) Fetch liked posts with author info and whether the user liked them (always true here)
+    rows = sql_query("""
+        SELECT
+            p.*,
+            u.username,
+            u.avatar_url,
+            1 AS likedByMe
+        FROM posts p
+        JOIN users u ON p.author_id = u.id
+        WHERE p.id IN (
+            SELECT post_id
+            FROM likes
+            WHERE user_id = ?
+        )
+        ORDER BY p.created_at DESC
+    """, (user_id,), fetch=True)
+
+    # 3) Convert to dicts and attach tagged clothes
+    posts = []
+    for r in rows:
+        post = dict(r)
+        post["clothes"] = clothes_for_post(post["id"])
+        posts.append(post)
+
+    return {"posts": posts}
+
 
 # ─────────────────────────────────────────────────────────────────── #
 if __name__ == "__main__":

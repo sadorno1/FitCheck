@@ -876,3 +876,68 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
 }
+
+
+/* ──────────────── Saved Posts ──────────────── */
+/* in style.css (or an imported css module) */
+
+/* Container for all saved cards */
+.saved-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+/* Each individual card */
+.saved-card {
+  position: relative;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 8px;            /* add some padding inside */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Remove any padding‑top or aspect‑ratio hacks you added */
+
+/* The strip: horizontal row, scroll if needed */
+.saved-clothes-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+/* Each thumbnail container */
+.saved-clothes-thumb {
+  flex: 0 0 120px;         
+  height: 180px;          
+  background: #f9f9f9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;        
+}
+
+.saved-clothes-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;     
+}
+
+.saved-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* Make the trash icon a bit smaller */
+.saved-remove-btn {
+  font-size: 1rem;
+  color: #e53e3e;
+}
