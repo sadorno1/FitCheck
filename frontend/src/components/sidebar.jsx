@@ -9,8 +9,7 @@ import {
   FiPlusSquare,   // post
   FiUser          // profile
 } from "react-icons/fi";
-import "./style.css";   // make sure the CSS below is in this file
-
+import "./style.css";   
 const NAV_ITEMS = [
   { label: "Home",           route: "/",           icon: FiHome },
   { label: "Search",         route: "/quiz",     icon: FiSearch },

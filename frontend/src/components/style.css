@@ -55,6 +55,7 @@ body {
   padding: 24px 16px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
   font-family: "Inter", sans-serif;
+  position: fixed;
 }
 .fc-logo {
   font-size: 2rem;
