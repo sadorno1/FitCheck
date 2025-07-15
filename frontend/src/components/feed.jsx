@@ -1,25 +1,22 @@
 // src/components/Feed.jsx
 import React, { useEffect, useState } from "react";
 import { FiHeart } from "react-icons/fi";
-import "./style.css";     
+import { getAuth } from "firebase/auth";
+import "./style.css";
 
-/* ─────────────── helper sub‑component ─────────────── */
 function PostCard({ post, onToggleLike }) {
   const { id, username, avatar_url, image_url, caption, like_count, likedByMe } =
     post;
 
   return (
     <div className="post-card">
-      {/* header */}
       <div className="post-header">
         <img src={avatar_url} alt={username} className="post-avatar" />
         <span className="post-username">{username}</span>
       </div>
 
-      {/* image */}
       <img src={image_url} alt={caption} className="post-image" />
 
-      {/* actions */}
       <div className="post-actions">
         <button
           className={`post-like-btn ${likedByMe ? "liked" : ""}`}
@@ -30,34 +27,48 @@ function PostCard({ post, onToggleLike }) {
         <span className="post-like-count">{like_count}</span>
       </div>
 
-      {/* caption */}
       {caption && <p className="post-caption">{caption}</p>}
     </div>
   );
 }
 
-/* ───────────────────── main feed ───────────────────── */
 export default function Feed() {
+  const auth = getAuth();
   const [posts, setPosts] = useState([]);
-  const [page, setPage]   = useState(0);
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const loadFeed = async (pageNum = 0) => {
-    const res   = await fetch(`/feed?page=${pageNum}`, {
-      credentials: "include",
-    });
-    const data  = await res.json();
-    setPosts((prev) =>
-      pageNum === 0 ? data.posts : [...prev, ...data.posts]
-    );
+    setLoading(true);
+    try {
+      const idToken =
+        auth.currentUser && (await auth.currentUser.getIdToken());
+
+      const res = await fetch(
+        `http://localhost:5000/feed?page=${pageNum}`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${idToken}` },
+        }
+      );
+      const data = await res.json();
+      setPosts((prev) =>
+        pageNum === 0 ? data.posts : [...prev, ...data.posts]
+      );
+    } catch (err) {
+      console.error("Failed to load feed:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadFeed(); 
+    loadFeed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleLike = async (postId) => {
-    fetch(`/posts/${postId}/like`, { method: "POST", credentials: "include" });
-
+    // optimistic update
     setPosts((prev) =>
       prev.map((p) =>
         p.id === postId
@@ -69,9 +80,23 @@ export default function Feed() {
           : p
       )
     );
+
+    try {
+      const idToken =
+        auth.currentUser && (await auth.currentUser.getIdToken());
+
+      await fetch(
+        `http://localhost:5000/posts/${postId}/like`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${idToken}` },
+        }
+      );
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+    }
   };
 
-  /* load more button */
   const loadMore = () => {
     const next = page + 1;
     loadFeed(next);
@@ -84,8 +109,8 @@ export default function Feed() {
         <PostCard key={post.id} post={post} onToggleLike={handleToggleLike} />
       ))}
 
-      <button className="load-more-btn" onClick={loadMore}>
-        Load More
+      <button className="load-more-btn" onClick={loadMore} disabled={loading}>
+        {loading ? "Loading…" : "Load More"}
       </button>
     </div>
   );

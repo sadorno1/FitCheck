@@ -163,7 +163,7 @@ def toggle_follow(follower_id: int, followed_id: int):
 def get_feed(user_id: int,
              limit: int = 20,
              offset: int = 0) -> list[dict]:
-    # who the user follows
+    # who the user 
     rows = sql_query(
         "SELECT followed_id FROM follows WHERE follower_id = ?",
         (user_id,),
@@ -185,4 +185,13 @@ def get_feed(user_id: int,
         (*author_ids, limit, offset),
         fetch=True
     )
+    return [dict(r) for r in rows]
+
+def get_following(user_id: int) -> list[dict]:
+    rows = sql_query("""
+        SELECT u.id, u.username, u.avatar_url
+        FROM follows f
+        JOIN users u ON f.followed_id = u.id
+        WHERE f.follower_id = ?
+    """, (user_id,), fetch=True)
     return [dict(r) for r in rows]

@@ -7,7 +7,7 @@ from services.firebase_upload import upload_to_firebase
 from db.store_quiz_result import store_quiz_result
 from db.init_db import (
     init_db, DB_NAME, get_or_create_user_id,sql_query,
-    create_post, toggle_like, toggle_follow, get_feed
+    create_post, toggle_like, toggle_follow, get_feed, get_following
 )
 from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result   import store_quiz_result
@@ -130,6 +130,18 @@ def api_feed():
     limit   = 20
     posts   = get_feed(user_id, limit=limit, offset=page * limit)
     return {"posts": posts}
+
+@app.get("/users/<string:uid>/following")
+@require_auth
+def api_get_following(uid):
+    current_uid = g.current_user["uid"]
+    if uid != "me" and uid != current_uid:
+        return {"error": "Unauthorized"}, 403
+
+    target_uid = current_uid if uid == "me" else uid
+    user_id = get_or_create_user_id(target_uid)
+    following = get_following(user_id)
+    return {"following": following}
 
 # ─────────────────────────────────────────────────────────────────── #
 if __name__ == "__main__":
