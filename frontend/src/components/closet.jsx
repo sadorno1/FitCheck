@@ -142,7 +142,8 @@ const ClosetView = () => {
           <p>Your closet is empty.</p>
           <button
             className="primary-btn"
-            onClick={() => navigate("/upload-item")}
+            onClick={() => navigate("/upload-clothes")}
+
           >
             Add Your First Item
           </button>
