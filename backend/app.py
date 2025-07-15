@@ -90,13 +90,12 @@ def check_username():
 @require_auth
 def api_create_post():
     uid      = g.current_user["uid"]
-    file     = request.files["image"]                   
+    file     = request.files["image"]        
     caption  = request.form.get("caption", "")
 
-    # 1. upload to storage → public URL
-    image_url = upload_to_firebase(uid, file)
+    img_bytes = file.read()                   
+    image_url = upload_to_firebase(img_bytes, uid)
 
-    # 2. DB write
     author_id = get_or_create_user_id(uid)
     post_id   = create_post(author_id, image_url, caption)
     return {"post_id": post_id}, 201
