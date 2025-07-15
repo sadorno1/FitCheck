@@ -20,27 +20,28 @@ import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
 
 export default function App() {
+  //localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          {/* public  */}
+          {/* public */}
           <Route path="/intro"    element={<Intro />} />
           <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* protected  */}
+          {/* protected with layout */}
           <Route element={<RequireAuth />}>
             <Route element={<ProtectedLayout />}>
               <Route path="/"            element={<Feed />} />
               <Route path="/closet"      element={<ClosetView />} />
               <Route path="/upload-item" element={<UploadItem />} />
-              <Route path="/quiz" element={<Quiz />} />
-
             </Route>
+
+            {/* protected without layout */}
+            <Route path="/quiz" element={<Quiz />} />
           </Route>
 
-          catch‑all  intro
           <Route path="*" element={<Navigate to="/intro" replace />} />
         </Routes>
       </Router>

@@ -13,12 +13,21 @@ const Login = () => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/closet");                             
+
+      const hasCompletedQuiz = localStorage.getItem("hasCompletedQuiz");
+
+      if (!hasCompletedQuiz) {
+        localStorage.setItem("hasCompletedQuiz", "true");
+        navigate("/quiz");
+      } else {
+        navigate("/closet");
+      }
+
     } catch (err) {
       alert(err.message);                        
     }
   };
-
+  
   return (
     <div className="form-container">
       <form className="form-card" onSubmit={handleLogin}>

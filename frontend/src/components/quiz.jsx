@@ -10,6 +10,8 @@ import {
 } from "react-icons/fi";
 import "./style.css";
 import { getAuth } from "firebase/auth";  
+import { useNavigate } from "react-router-dom";
+
 
 const GENDERS = ["Female", "Male", "Non‑binary", "Prefer not to say"];
 const IMAGES = [
@@ -34,6 +36,7 @@ const debounce = (fn, ms = 400) => {
 
 export default function Quiz({ onComplete }) {
 const auth = getAuth();  
+const navigate = useNavigate();
   const [answers, setAns] = useState({
     username: "",
     avatar: null,
@@ -84,6 +87,7 @@ const auth = getAuth();
    const saveQuiz = async () => {
     const idToken = auth.currentUser && await auth.currentUser.getIdToken();
 
+
     const fd = new FormData();
     fd.append("username", answers.username);
     fd.append("avatar",  answers.avatar);
@@ -102,7 +106,9 @@ const auth = getAuth();
     });
 
     if (res.ok) {
-      onComplete ? onComplete() : console.log("Quiz saved!");
+        console.log("Quiz saved successfully!");
+        localStorage.setItem("hasCompletedQuiz", "true");
+        navigate("/");
     } else {
       alert("Something went wrong saving your quiz.");
     }
