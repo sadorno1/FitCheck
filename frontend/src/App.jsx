@@ -8,6 +8,7 @@ import {
 
 import Login       from "./components/login";
 import Register    from "./components/register";
+import PostUpload from "./components/post";
 import Intro       from "./components/intro";
 import ClosetView  from "./components/closet";
 import UploadItem  from "./components/upload-item";
@@ -41,7 +42,7 @@ export default function App() {
             <Route element={<ProtectedLayout />}>
               <Route path="/"            element={<Feed />} />
               <Route path="/closet"      element={<ClosetView />} />
-              <Route path="/upload-item" element={<UploadItem />} />
+              <Route path="/upload-item" element={<PostUpload />} />
               <Route path="/profile"       element={<Profile />} />
               <Route path="/user/:id" element={<Profile />} />
             </Route>

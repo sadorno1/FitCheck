@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSearchDrawer } from "../contexts/SearchDrawerContext"; 
+
 import {
   FiHome,
   FiSearch,
@@ -10,21 +11,22 @@ import {
   FiPlusSquare,   // post
   FiUser          // profile
 } from "react-icons/fi";
+
 import "./style.css";   
+
 const NAV_ITEMS = [
-  { label: "Home",           route: "/",           icon: FiHome },
-  { label: "Search",         route: "/search",     icon: FiSearch },
-  { label: "Post",           route: "/post"          ,icon: FiPlusSquare },
-  { label: "Saved",          route: "/saved",      icon: FiBookmark },
-  { label: "My Closet",      route: "/closet",     icon: FiBox },
-  { label: "Virtual Try‑On", route: "/try-on",     icon: FiCamera },
-  { label: "Profile",        route: "/profile",    icon: FiUser },
+  { label: "Home",           route: "/",             icon: FiHome },
+  { label: "Search",         route: "/search",       icon: FiSearch },
+  { label: "Post",           route: "/upload-item",  icon: FiPlusSquare }, // ✅ fixed path
+  { label: "Saved",          route: "/saved",        icon: FiBookmark },
+  { label: "My Closet",      route: "/closet",       icon: FiBox },
+  { label: "Virtual Try‑On", route: "/try-on",       icon: FiCamera },
+  { label: "Profile",        route: "/profile",      icon: FiUser },
 ];
 
 export default function Sidebar() {
   const { pathname } = useLocation();
   const { open } = useSearchDrawer();
-
 
   return (
     <aside className="fc-sidebar">
@@ -36,9 +38,9 @@ export default function Sidebar() {
               {label === "Search" ? (
                 <button
                   onClick={open}
-                   className={
-    `fc-link ${pathname === route ? 'fc-link--active' : ''} fc-link-button`
-  }
+                  className={
+                    `fc-link ${pathname === route ? 'fc-link--active' : ''} fc-link-button`
+                  }
                 >
                   <Icon className="fc-icon" />
                   <span>{label}</span>
