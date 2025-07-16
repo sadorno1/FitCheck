@@ -1,15 +1,16 @@
-// TryOn.jsx — disable browser ghost drag, live outline, free‑form resize
-// -----------------------------------------------------------------------------
-// • Sets draggable="false" on images to stop red “no” cursor & ghost image.
-// • Uses onDrag to live‑update state so selection outline follows sticker.
-// • Keeps free‑form resize. Trash detection unchanged.
-
-import React, { useEffect, useState } from "react";
-import { Rnd } from "react-rnd";
+// AvatarCreator.jsx — pretty layout & preview card
+//--------------------------------------------------
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 
-const auth = getAuth();
-const API_ROOT ="http://localhost:5000";
+const auth      = getAuth();
+const API_ROOT  = "http://localhost:5000";
+
+const faceIds   = [1, 2, 3, 4, 5, 6];
+const shapes    = ["skinny", "medium", "big"];
+const faceSrc   = (id)        => `/assets/avatars/faces/face${id}.png`;
+const bodySrc   = (face, sh)  => `/assets/avatars/bodies/face${face}-${sh}.png`;
 
 const authedFetch = async (url, options = {}) => {
   const idToken = await auth.currentUser.getIdToken();
@@ -19,138 +20,114 @@ const authedFetch = async (url, options = {}) => {
   });
 };
 
-export default function TryOn() {
-  const [avatarSrc, setAvatarSrc] = useState(null);
-  const [closet, setCloset] = useState([]);
-  const [stickers, setStickers] = useState([]); // {key,src,x,y,w,h,z}
-  const [showPanel, setShowPanel] = useState(false);
-  const [selectedKey, setSelectedKey] = useState(null);
+export default function AvatarCreator() {
+  const [step, setStep]     = useState(0);   // 0 → face · 1 → body · 2 → preview
+  const [faceId, setFace]   = useState(null);
+  const [shape,  setShape]  = useState(null);
+  const navigate            = useNavigate();
 
-  /* ---------------- Fetch avatar & closet ---------------- */
-  useEffect(() => {
-    (async () => {
-      const res = await authedFetch(`${API_ROOT}/avatar`);
-      const data = await res.json();
-      const { face, bodyType } = data.avatar || {};
-      if (face && bodyType) {
-        setAvatarSrc(`/assets/avatars/bodies/face${face}-${bodyType}.png`);
-      }
-    })();
-    (async () => {
-      const res = await authedFetch(`${API_ROOT}/get_closet_by_user`);
-      const data = await res.json();
-      setCloset(data || []);
-    })();
-  }, []);
+  const heading = ["Pick a face", "Pick a body", "All set!"][step];
+  const canNext = step === 0 ? !!faceId : !!shape;
 
-  /* ---------------- Sticker helpers ---------------- */
-  const nextZ = () => (stickers.length ? Math.max(...stickers.map((s) => s.z)) + 1 : 1);
+  async function saveAvatar() {
+    if (!faceId || !shape) return;
+    await authedFetch(`${API_ROOT}/avatar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ face: faceId, bodyType: shape }),
+    });
+    navigate("/try-on");
+  }
 
-  const addSticker = (item) => {
-    const key = Date.now();
-    setStickers((p) => [
-      ...p,
-      { key, src: item.image_url, x: 140, y: 140, w: 100, h: 100, z: nextZ() },
-    ]);
-    setShowPanel(false);
-    setSelectedKey(key);
-  };
-
-  const removeSticker = (key) => setStickers((p) => p.filter((s) => s.key !== key));
-  const moveSticker   = (key, updates) => setStickers((p) => p.map((s) => (s.key === key ? { ...s, ...updates } : s)));
-  const bringFwd      = (key) => moveSticker(key, { z: nextZ() });
-  const sendBack      = (key) => moveSticker(key, { z: 0 });
-
-  /* ---------------- Trash zone detection ---------------- */
-  const isOverTrash = (x, y, w, h) => {
-    const playRect  = document.getElementById("playground").getBoundingClientRect();
-    const trashRect = document.getElementById("trash-bin").getBoundingClientRect();
-    const sLeft   = playRect.left + x;
-    const sTop    = playRect.top + y;
-    const sRight  = sLeft + w;
-    const sBottom = sTop + h;
-    return sRight > trashRect.left && sLeft < trashRect.right && sBottom > trashRect.top && sTop < trashRect.bottom;
-  };
-
-  /* ---------------- Render ---------------- */
   return (
-    <div className="tryon-wrapper">
-      <h1 className="tryon-title">Virtual Try‑On</h1>
+    <div className="wrapper">
+      <h1 className="title">{heading}</h1>
 
-      <div
-        id="playground"
-        className="playground"
-        onMouseDown={(e) => {
-          if (e.target.id === "playground") setSelectedKey(null);
-        }}
-      >
-        {avatarSrc && <img src={avatarSrc} alt="avatar" className="avatar-img" draggable={false} />}
-
-        <div id="trash-bin" className="trash-bin" title="Drag here to delete">🗑️</div>
-
-        {stickers.map((s) => (
-          <Rnd
-            key={s.key}
-            bounds="#playground"
-            style={{ zIndex: s.z, cursor: "move" }}
-            size={{ width: s.w, height: s.h }}
-            position={{ x: s.x, y: s.y }}
-            onDrag={(e, d) => moveSticker(s.key, { x: d.x, y: d.y })}
-            onResize={(e, dir, ref, delta, pos) => moveSticker(s.key, { w: ref.offsetWidth, h: ref.offsetHeight, x: pos.x, y: pos.y })}
-            onDragStop={(e, d) => {
-              if (isOverTrash(d.x, d.y, s.w, s.h)) removeSticker(s.key);
-            }}
-            onResizeStop={(e, dir, ref, delta, pos) => {
-              if (isOverTrash(pos.x, pos.y, ref.offsetWidth, ref.offsetHeight)) removeSticker(s.key);
-            }}
-            enableResizing={{ top:true, right:true, bottom:true, left:true, topLeft:true, topRight:true, bottomLeft:true, bottomRight:true }}
-            onMouseDown={() => setSelectedKey(s.key)}
-          >
-            <div className={`sticker-box ${selectedKey === s.key ? "sticker-selected" : ""}`}>
-              <img src={s.src} alt="sticker" className="sticker-img" draggable={false} />
-              {selectedKey === s.key && (
-                <div className="layer-controls">
-                  <button onClick={() => bringFwd(s.key)}>⬆</button>
-                  <button onClick={() => sendBack(s.key)}>⬇</button>
-                </div>
-              )}
-            </div>
-          </Rnd>
-        ))}
-      </div>
-
-      <button className="btn-primary" onClick={() => setShowPanel(!showPanel)}>
-        {showPanel ? "Close" : "Add Clothes"}
-      </button>
-
-      {showPanel && (
-        <div className="closet-panel">
-          {closet.map((c) => (
-            <button key={c.id} className="closet-item" onClick={() => addSticker(c)}>
-              <img src={c.image_url} alt="item" className="closet-thumb" draggable={false} />
+      {/* step 0 - face */}
+      {step === 0 && (
+        <div className="grid faces">
+          {faceIds.map((id) => (
+            <button
+              key={id}
+              className={`cell ${faceId === id ? "picked" : ""}`}
+              onClick={() => setFace(id)}
+            >
+              <img src={faceSrc(id)} alt="" />
+              {faceId === id && <span className="badge">✓</span>}
             </button>
           ))}
         </div>
       )}
 
-      {/* ---------------- Styles ---------------- */}
+      {/* step 1 - body */}
+      {step === 1 && (
+        <div className="grid">
+          {shapes.map((s) => (
+            <button
+              key={s}
+              className={`cell ${shape === s ? "picked" : ""}`}
+              onClick={() => setShape(s)}
+            >
+              <img src={bodySrc(faceId, s)} alt="" />
+              {shape === s && <span className="badge">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* step 2 - preview */}
+      {step === 2 && (
+        <div className="preview-card">
+          <img
+            src={bodySrc(faceId, shape)}
+            alt="avatar"
+            className="preview-img"
+          />
+        </div>
+      )}
+
+      {/* nav buttons */}
+      <div className="btn-row">
+        {step > 0 && (
+          <button onClick={() => setStep(step - 1)} className="btn secondary">
+            Back
+          </button>
+        )}
+        {step < 2 && (
+          <button
+            disabled={!canNext}
+            onClick={() => setStep(step + 1)}
+            className="btn primary"
+          >
+            Next
+          </button>
+        )}
+        {step === 2 && (
+          <button onClick={saveAvatar} className="btn primary">
+            Save &amp; Continue
+          </button>
+        )}
+      </div>
+
+      {/* styles */}
       <style>{`
-        :root { --play-size: 30rem; --trash-size: 52px; }
-        .tryon-wrapper  { display:flex; flex-direction:column; align-items:center; gap:1.25rem; padding:1.25rem; }
-        .tryon-title    { font-size:1.25rem; font-weight:600; }
-        .playground     { position:relative; width:var(--play-size); height:var(--play-size); border:3px solid #6366f1; border-radius:0.75rem; background:#fff; overflow:hidden; }
-        .avatar-img     { position:absolute; top:50%; left:50%; width:45%; transform:translate(-50%,-50%); user-select:none; pointer-events:none; }
-        .trash-bin      { position:absolute; right:12px; bottom:12px; width:var(--trash-size); height:var(--trash-size); background:#d1d5db; color:#1f2937; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:26px; }
-        .sticker-box    { width:100%; height:100%; position:relative; }
-        .sticker-img    { width:100%; height:100%; object-fit:contain; }
-        .sticker-selected { outline:2px dashed #6366f1; }
-        .layer-controls button { background:#4b5563; color:#fff; border:none; width:22px; height:22px; font-size:13px; cursor:pointer; border-radius:3px; }
-        .layer-controls { position:absolute; top:-24px; left:0; display:flex; gap:4px; }
-        .btn-primary    { padding:0.5rem 1rem; background:#4f46e5; color:#fff; border-radius:0.5rem; border:none; cursor:pointer; }
-        .btn-primary:hover { background:#4338ca; }
-        .closet-panel   { display:grid; grid-template-columns:repeat(5,1fr); gap:0.75rem; max-width:22rem; padding:1rem; border:1px solid #e5e7eb; border-radius:0.75rem; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-        .closet-item    { border:none; background:none; padding:0; cursor:pointer; border-radius:0.5rem; overflow:hidden; }
-        .closet-thumb   { width:70px; height:70px; object-fit:cover; }
+        .wrapper      {max-width:28rem;margin:0 auto;padding:2rem 1rem;display:flex;flex-direction:column;align-items:center;gap:1.75rem;}
+        .title        {font-size:1.75rem;font-weight:600;text-align:center;}
+        .grid         {display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;width:100%;}
+        .faces img    {width:80%;margin:10% auto;}
+        .cell         {position:relative;border:3px solid transparent;border-radius:12px;overflow:hidden;cursor:pointer;transition:border .15s;}
+        .cell img     {width:100%;aspect-ratio:1/1;object-fit:cover;}
+        .picked       {border-color:#6e1d9f;}
+        .badge        {position:absolute;top:6px;right:6px;background:#6e1d9f;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;}
+        .btn-row      {display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;}
+        .btn          {padding:.55rem 1.25rem;border-radius:.5rem;font-weight:500;transition:.15s;}
+        .primary      {background:#4f46e5;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+        .primary:hover{background:#4338ca;}
+        .primary:disabled{opacity:.5;cursor:not-allowed;}
+        .secondary    {border:1px solid #4f46e5;color:#4f46e5;}
+        .secondary:hover{background:#eef2ff;}
+        .preview-card {padding:1.25rem;border:2px dashed #6e1d9f;border-radius:1rem;box-shadow:0 4px 8px rgba(0,0,0,.05);}
+        .preview-img  {width:7rem;height:auto;display:block;margin:0 auto;}
       `}</style>
     </div>
   );

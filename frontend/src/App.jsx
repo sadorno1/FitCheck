@@ -24,6 +24,7 @@ import AvatarCreator from "./components/AvatarCreator";
 import { SearchDrawerProvider } from "./contexts/SearchDrawerContext";
 import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 
 
 export default function App() {
