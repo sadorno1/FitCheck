@@ -4,7 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 DB_NAME = BASE_DIR / "fitcheck.db"
 
-def sql_query(query, params, fetch = False):
+def sql_query(query, params=(), fetch = False):
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     cur  = conn.cursor()
@@ -32,6 +32,7 @@ def init_db():
             style        TEXT,
             gender       TEXT,
             age          INTEGER
+            avatar_model TEXT
         )
         """,
         """

@@ -20,8 +20,8 @@ const NAV_ITEMS = [
   { label: "Post",           route: "/post",  icon: FiPlusSquare }, 
   { label: "Saved",          route: "/saved",        icon: FiBookmark },
   { label: "My Closet",      route: "/closet",       icon: FiBox },
-  { label: "Virtual Try‑On", route: "/try-on",       icon: FiCamera },
-  { label: "Profile",        route: "/profile",      icon: FiUser },
+  { label: "Virtual Try‑On", route: "/AvatarCreator",       icon: FiCamera },
+  { label: "Profile",        route: "/try-on",      icon: FiUser },
 ];
 
 export default function Sidebar() {

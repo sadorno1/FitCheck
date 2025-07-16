@@ -19,13 +19,15 @@ import ProtectedLayout from "./components/ProtectedLayout";
 import Profile from "./components/profile"; 
 import SearchDrawer from "./components/search";
 import Saved from "./components/saved";
+import TryOn from "./components/try-on";
+import AvatarCreator from "./components/AvatarCreator";
 import { SearchDrawerProvider } from "./contexts/SearchDrawerContext";
 import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
 
 
 export default function App() {
-  localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
+  // localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
   return (
     <AuthProvider>
         <SearchDrawerProvider>
@@ -46,7 +48,8 @@ export default function App() {
               <Route path="/closet"      element={<ClosetView />} />
               <Route path="/upload-item" element={<UploadItem />} />
               <Route path="/post" element={<PostUpload />} />
-
+              <Route path="/AvatarCreator"      element={<AvatarCreator />} />
+              <Route path="/try-on"     element={<TryOn />} />
               <Route path="/profile"       element={<Profile />} />
               <Route path="/saved" element={<Saved />} />
               <Route path="/user/:id" element={<Profile />} />

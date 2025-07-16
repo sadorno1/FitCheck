@@ -15,15 +15,7 @@ from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result   import store_quiz_result
 
 init_db()
-# Replace post_id_value with the ID of the post you care about
-all_users = sql_query(
-    "SELECT * FROM users",
-    fetch=True
-)
 
-# Print each as a dict
-for user_row in all_users:
-    print(dict(user_row))
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -184,11 +176,9 @@ def api_search_users():
 @app.get("/posts/liked")
 @require_auth
 def api_liked_posts():
-    # 1) Map Firebase UID → local user ID
     firebase_uid = g.current_user["uid"]
     user_id = get_or_create_user_id(firebase_uid)
 
-    # 2) Fetch liked posts with author info and whether the user liked them (always true here)
     rows = sql_query("""
         SELECT
             p.*,
@@ -205,7 +195,6 @@ def api_liked_posts():
         ORDER BY p.created_at DESC
     """, (user_id,), fetch=True)
 
-    # 3) Convert to dicts and attach tagged clothes
     posts = []
     for r in rows:
         post = dict(r)
@@ -213,6 +202,56 @@ def api_liked_posts():
         posts.append(post)
 
     return {"posts": posts}
+
+
+# ───────────────────────────── Avatar ───────────────────────────── #
+@app.post("/avatar")
+@require_auth
+def api_save_avatar():
+    """
+    Body (JSON):
+      {
+        "face": 4,
+        "bodyType": "medium"
+      }
+    """
+    data = request.get_json(force=True)
+
+    # Basic validation
+    try:
+        face      = int(data["face"])
+        body_type = str(data["bodyType"])
+    except (KeyError, ValueError):
+        return {"error": "Invalid payload"}, 400
+
+    # Current user → numeric user_id
+    firebase_uid = g.current_user["uid"]
+    user_id      = get_or_create_user_id(firebase_uid)
+
+    # Persist as JSON string
+    avatar_json = json.dumps({"face": face, "bodyType": body_type})
+    sql_query(
+        "UPDATE users SET avatar_model = ? WHERE id = ?",
+        (avatar_json, user_id)
+    )
+
+    return {}, 204
+
+
+@app.get("/avatar")
+@require_auth
+def api_get_avatar():
+    """Return the saved avatar model for the current user (or null)."""
+    firebase_uid = g.current_user["uid"]
+    user_id      = get_or_create_user_id(firebase_uid)
+
+    row = sql_query(
+        "SELECT avatar_model FROM users WHERE id = ?",
+        (user_id,),
+        fetch=True
+    )
+    model = row[0]["avatar_model"] if row else None
+    return {"avatar": json.loads(model) if model else None}
 
 
 # ─────────────────────────────────────────────────────────────────── #
