@@ -22,8 +22,16 @@ init_db()
 
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
-
+CORS(
+    app,
+    resources={r"/*": {"origins": [
+        "http://localhost:3000",   # CRA / Vite
+        "http://127.0.0.1:3000",   # some browsers send this Origin
+    ]}},
+    supports_credentials=True,          # because you send a bearer token
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+)
 # ────────────────────────── Closet & Quiz ────────────────────────── #
 @app.route("/upload_item", methods=["POST"])
 @require_auth

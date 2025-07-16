@@ -29,7 +29,7 @@ import { onAuthStateChanged, getAuth } from "firebase/auth";
 
 
 export default function App() {
-  // localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
+  localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
   return (
     <AuthProvider>
         <SearchDrawerProvider>
