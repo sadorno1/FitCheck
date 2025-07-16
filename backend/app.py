@@ -2,7 +2,11 @@ from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from auth import require_auth
 from routes.upload_item import upload_item_handler
-import json
+import io, requests, json
+import google.generativeai as genai
+from PIL import Image
+Resample = getattr(Image, "Resampling", Image)
+LANCZOS  = getattr(Resample, "LANCZOS", Image.LANCZOS)
 from services.firebase_upload import upload_to_firebase
 from db.store_quiz_result import store_quiz_result
 from db.init_db import (
@@ -253,7 +257,59 @@ def api_get_avatar():
     model = row[0]["avatar_model"] if row else None
     return {"avatar": json.loads(model) if model else None}
 
+# ───────────────────────────── Looks ───────────────────────────── #
+@app.post("/looks")
+@require_auth
+def save_look():
+    data        = request.get_json(force=True) or {}
+    avatar_url  = data.get("avatar")
+    stickers    = data.get("stickers", [])
+    canvas      = data.get("canvas", {})
+    cw, ch      = int(canvas.get("w", 480)), int(canvas.get("h", 480))
 
+    if not avatar_url:
+        return jsonify(error="avatar field required"), 400
+
+    base = Image.new("RGBA", (cw, ch), (255, 255, 255, 0))
+
+    avatar_img = Image.open(io.BytesIO(requests.get(avatar_url).content)).convert("RGBA")
+    av_w       = int(cw * 0.45)
+    av_h       = int(avatar_img.height * av_w / avatar_img.width)
+    avatar_img = avatar_img.resize((av_w, av_h), LANCZOS)
+    av_x       = (cw - av_w) // 2
+    av_y       = (ch - av_h) // 2
+    base.paste(avatar_img, (av_x, av_y), avatar_img)
+
+    for st in sorted(stickers, key=lambda s: s["z"]):
+        img = Image.open(io.BytesIO(requests.get(st["src"]).content)).convert("RGBA")
+        img = img.resize((int(st["w"]), int(st["h"])), LANCZOS)
+        base.paste(img, (int(st["x"]), int(st["y"])), img)
+
+    buf = io.BytesIO()
+    base.save(buf, format="PNG")
+    buf.seek(0)
+
+    firebase_uid = g.current_user["uid"]
+    image_url    = upload_to_firebase(buf.getvalue(), firebase_uid)
+
+    user_id = get_or_create_user_id(firebase_uid)
+    sql_query(
+        "INSERT INTO looks (user_id, image_url, layout_json) VALUES (?,?,?)",
+        (user_id, image_url, json.dumps(stickers))
+    )
+    return {}, 204
+
+@app.get("/looks")
+@require_auth
+def list_looks():
+    uid     = g.current_user["uid"]
+    user_id = get_or_create_user_id(uid)
+
+    rows = sql_query(
+        "SELECT id, image_url, created_at FROM looks WHERE user_id = ? ORDER BY id DESC",
+        (user_id,), fetch=True
+    )
+    return jsonify([dict(r) for r in rows])
 # ─────────────────────────────────────────────────────────────────── #
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

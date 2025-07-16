@@ -22,6 +22,15 @@ def sql_query(query, params=(), fetch = False):
 
 def init_db():
     statements = [
+        """CREATE TABLE IF NOT EXISTS looks (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id      INTEGER NOT NULL,
+  image_url    TEXT,
+  layout_json  TEXT,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+""",
         """
         CREATE TABLE IF NOT EXISTS users (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,

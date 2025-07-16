@@ -1,16 +1,12 @@
-// TryOn.jsx — red delete‑button + distorted stretch
-// -----------------------------------------------------------------------------
-// • Removed trash‑bin; each sticker shows a red × delete badge (always
-//   visible on hover).
-// • `object-fit: fill` so image distorts with free‑form resize.
-
+// TryOn.jsx — save, load & capture looks (CORS‑safe via blob URLs)
+// ----------------------------------------------------------------
 import React, { useEffect, useState } from "react";
 import { Rnd } from "react-rnd";
 import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
-const auth = getAuth();
-const API_ROOT = "http://localhost:5000";
+const auth      = getAuth();
+const API_ROOT  = "http://localhost:5000";
 
 const authedFetch = async (url, options = {}) => {
   const idToken = await auth.currentUser.getIdToken();
@@ -20,145 +16,161 @@ const authedFetch = async (url, options = {}) => {
   });
 };
 
-export default function TryOn() {
-  const [avatarSrc, setAvatarSrc] = useState(null);
-  const [closet, setCloset] = useState([]);
-  const [stickers, setStickers] = useState([]); // {key,src,x,y,w,h,z}
-  const [showPanel, setShowPanel] = useState(false);
-  const [selectedKey, setSelectedKey] = useState(null);
-  const navigate = useNavigate();
+const absURL = (u) =>
+  u.startsWith("http") ? u : `${window.location.origin}${u}`;
 
-  /* ---------------- Fetch avatar & closet ---------------- */
+
+export default function TryOn() {
+  const [avatarSrc, setAvatarSrc]   = useState(null);
+  const [closet, setCloset]         = useState([]);
+  const [stickers, setStickers]     = useState([]);
+  const [showPanel, setShowPanel]   = useState(false);
+  const [selectedKey, setSelected]  = useState(null);
+  const [saving, setSaving]         = useState(false);
+  const navigate                    = useNavigate();
+
+  /* ---- fetch avatar & closet ---- */
   useEffect(() => {
     (async () => {
-      const res = await authedFetch(`${API_ROOT}/avatar`);
-      const data = await res.json();
-      const { face, bodyType } = data.avatar || {};
-      if (face && bodyType) {
-        setAvatarSrc(`/assets/avatars/bodies/face${face}-${bodyType}.png`);
-      }
+      const a = await authedFetch(`${API_ROOT}/avatar`).then(r => r.json());
+      const { face, bodyType } = a.avatar || {};
+      if (face && bodyType) setAvatarSrc(`/assets/avatars/bodies/face${face}-${bodyType}.png`);
     })();
     (async () => {
-      const res = await authedFetch(`${API_ROOT}/get_closet_by_user`);
-      const data = await res.json();
+      const data = await authedFetch(`${API_ROOT}/get_closet_by_user`).then(r => r.json());
       setCloset(data || []);
     })();
   }, []);
 
-  /* ---------------- Sticker helpers ---------------- */
-  const nextZ = () => (stickers.length ? Math.max(...stickers.map((s) => s.z)) + 1 : 1);
+  /* ---- sticker helpers ---- */
+  const nextZ   = () => stickers.length ? Math.max(...stickers.map(s => s.z)) + 1 : 1;
 
-  const addSticker = (item) => {
+  const addSticker = async (item) => {
     const key = Date.now();
-    setStickers((p) => [
-      ...p,
-      { key, src: item.image_url, x: 140, y: 140, w: 100, h: 100, z: nextZ() },
-    ]);
-    setShowPanel(false);
-    setSelectedKey(key);
+    setStickers(p => [...p, {
+      key,
+      src: item.image_url,         
+      x: 140, y: 140, w: 100, h: 100, z: nextZ()
+    }]);
+    setShowPanel(false); setSelected(key);
   };
 
-  const removeSticker = (key) => setStickers((p) => p.filter((s) => s.key !== key));
-  const moveSticker   = (key, updates) => setStickers((p) => p.map((s) => (s.key === key ? { ...s, ...updates } : s)));
-  const bringFwd      = (key) => moveSticker(key, { z: nextZ() });
-  const sendBack      = (key) => moveSticker(key, { z: 0 });
+  const remove   = k   => setStickers(p => p.filter(s => s.key !== k));
+  const move     = (k,u)=> setStickers(p => p.map(s => s.key===k?{...s,...u}:s));
+  const bringFwd = k   => move(k,{ z: nextZ() });
+  const sendBack = k   => move(k,{ z: 0       });
 
-  /* ---------------- Render ---------------- */
+  /* ---- save look ---- */
+
+const saveLook = async () => {
+  if (!avatarSrc || saving) return;
+  setSaving(true);
+  try {
+    const playRect = document
+      .getElementById("playground")
+      .getBoundingClientRect();
+
+    const payload = {
+      avatar: absURL(avatarSrc),
+      stickers: stickers.map(s => ({ ...s, src: absURL(s.src) })),
+      canvas: { w: Math.round(playRect.width),
+                h: Math.round(playRect.height) }
+    };
+
+    await authedFetch(`${API_ROOT}/looks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    alert("Look saved!");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save look");
+  } finally {
+    setSaving(false);
+  }
+};
+
+
+  /* ---- JSX ---- */
   return (
     <div className="tryon-wrapper">
-      <h1 className="tryon-title">Virtual Try‑On</h1>
+      <h1 className="tryon-title">Virtual Try‑On</h1>
 
-      <div
-        id="playground"
-        className="playground"
-        onMouseDown={(e) => {
-          if (e.target.id === "playground") setSelectedKey(null);
-        }}
-      >
-        {avatarSrc && <img src={avatarSrc} alt="avatar" className="avatar-img" draggable={false} />}
+      {/* playground */}
+      <div id="playground" className="playground"
+           onMouseDown={e => e.target.id === "playground" && setSelected(null)}>
+        {avatarSrc && <img src={avatarSrc} alt="" className="avatar-img" draggable={false}/>}
 
-        {stickers.map((s) => (
-          <Rnd
-            key={s.key}
-            bounds="#playground"
-            style={{ zIndex: s.z, cursor: "move" }}
-            size={{ width: s.w, height: s.h }}
-            position={{ x: s.x, y: s.y }}
-            onDrag={(e, d) => moveSticker(s.key, { x: d.x, y: d.y })}
-            onResize={(e, dir, ref, delta, pos) => moveSticker(s.key, { w: ref.offsetWidth, h: ref.offsetHeight, x: pos.x, y: pos.y })}
-            enableResizing
-            onMouseDown={() => setSelectedKey(s.key)}
+        {stickers.map(s => (
+          <Rnd key={s.key} bounds="#playground" style={{ zIndex:s.z, cursor:"move" }}
+               size={{ width:s.w, height:s.h }} position={{ x:s.x, y:s.y }}
+               enableResizing onMouseDown={() => setSelected(s.key)}
+               onDrag={(e,d)=>move(s.key,{x:d.x,y:d.y})}
+               onResize={(e, dir, ref, delta, pos)=>
+                 move(s.key,{ x:pos.x, y:pos.y, w:ref.offsetWidth, h:ref.offsetHeight })}
           >
-             <div
-    className={`sticker-box ${selectedKey === s.key ? "sticker-selected" : ""}`}
-    onMouseDown={() => setSelectedKey(s.key)}
-  >
-    <img
-      src={s.src}
-      alt="sticker"
-      className="sticker-img"
-      draggable={false}
-    />
-
-    {/* show controls ONLY when selected */}
-    {selectedKey === s.key && (
-      <>
-        {/* red delete badge */}
-        <button
-          className="sticker-delete"
-          onClick={() => removeSticker(s.key)}
-        >
-          ×
-        </button>
-
-        {/* layer buttons */}
-        <div className="layer-controls">
-          <button onClick={() => bringFwd(s.key)}>⬆</button>
-          <button onClick={() => sendBack(s.key)}>⬇</button>
-        </div>
-      </>
-    )}
-  </div>
+            <div className={`sticker-box ${selectedKey===s.key ? "sel" : ""}`}>
+              <img src={s.src} alt="" className="sticker-img" draggable={false} />
+              {selectedKey===s.key && (
+                <>
+                  <button className="del" onClick={()=>remove(s.key)}>×</button>
+                  <div className="layers">
+                    <button onClick={()=>bringFwd(s.key)}>⬆</button>
+                    <button onClick={()=>sendBack(s.key)}>⬇</button>
+                  </div>
+                </>
+              )}
+            </div>
           </Rnd>
         ))}
       </div>
 
-      <button className="btn-primary" onClick={() => setShowPanel(!showPanel)}>
-        {showPanel ? "Close" : "Add Clothes"}
-      </button>
+      {/* controls */}
+      <div style={{ display:"flex", gap:".75rem", flexWrap:"wrap" }}>
+        <button className="btn" onClick={()=>setShowPanel(!showPanel)}>
+          {showPanel ? "Close" : "Add Clothes"}
+        </button>
+        <button className="btn" onClick={()=>navigate("/AvatarCreator")}>
+          Change Avatar
+        </button>
+        <button className="btn" disabled={saving} onClick={saveLook}>
+          {saving ? "Saving…" : "Save Look"}
+        </button>
+        <button className="btn" onClick={()=>navigate("/SavedLooks")}>
+          View Looks
+        </button>
+      </div>
 
-      <button className="btn-primary" onClick={() => navigate('/AvatarCreator')}>
-        Change Avatar
-      </button>
-
+      {/* closet panel */}
       {showPanel && (
-        <div className="closet-panel">
-          {closet.map((c) => (
-            <button key={c.id} className="closet-item" onClick={() => addSticker(c)}>
-              <img src={c.image_url} alt="item" className="closet-thumb" draggable={false} />
+        <div className="panel">
+          {closet.map(c => (
+            <button key={c.id} className="thumb-btn" onClick={()=>addSticker(c)}>
+              <img src={c.image_url} alt="" className="thumb" draggable={false}/>
             </button>
           ))}
         </div>
       )}
 
-      {/* ---------------- Styles ---------------- */}
+      {/* styles */}
       <style>{`
-        :root { --play-size: 30rem; --delete-size: 20px; }
-        .tryon-wrapper  { display:flex; flex-direction:column; align-items:center; gap:1.25rem; padding:1.25rem; }
-        .tryon-title    { font-size:1.25rem; font-weight:600; }
-        .playground     { position:relative; width:var(--play-size); height:var(--play-size); border:3px solid #6366f1; border-radius:0.75rem; background:#fff; overflow:hidden; }
-        .avatar-img     { position:absolute; top:50%; left:50%; width:45%; transform:translate(-50%,-50%); user-select:none; pointer-events:none; }
-        .sticker-box    { width:100%; height:100%; position:relative; }
-        .sticker-img    { width:100%; height:100%; object-fit:fill; }
-        .sticker-selected { outline:2px dashed #6366f1; }
-        .sticker-delete { position:absolute; top:6x; right:-6px; width:var(--delete-size); height:var(--delete-size); background:#dc2626; color:#fff; border:none; border-radius:50%; font-size:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-        .layer-controls button { background:#4b5563; color:#fff; border:none; width:22px; height:22px; font-size:13px; cursor:pointer; border-radius:3px; }
-        .layer-controls { position:absolute; top:-24px; left:0; display:flex; gap:4px; }
-        .btn-primary    { padding:0.5rem 1rem; background:#4f46e5; color:#fff; border-radius:0.5rem; border:none; cursor:pointer; }
-        .btn-primary:hover { background:#4338ca; }
-        .closet-panel   { display:grid; grid-template-columns:repeat(5,1fr); gap:0.75rem; max-width:22rem; padding:1rem; border:1px solid #e5e7eb; border-radius:0.75rem; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-        .closet-item    { border:none; background:none; padding:0; cursor:pointer; border-radius:0.5rem; overflow:hidden; }
-        .closet-thumb   { width:70px; height:70px; object-fit:cover; }
+        :root { --play:30rem; --del:20px; }
+        .tryon-wrapper{display:flex;flex-direction:column;align-items:center;gap:1.2rem;padding:1.2rem}
+        .tryon-title{font-size:1.3rem;font-weight:600}
+        .playground{position:relative;width:var(--play);height:var(--play);border:3px solid #6366f1;border-radius:12px;background:#fff;overflow:hidden}
+        .avatar-img{position:absolute;top:50%;left:50%;width:45%;transform:translate(-50%,-50%)}
+        .sticker-box{width:100%;height:100%;position:relative}
+        .sticker-img{width:100%;height:100%;object-fit:fill}
+        .sel{outline:2px dashed #6366f1}
+        .del{position:absolute;top:6px;right:-6px;width:var(--del);height:var(--del);background:#dc2626;color:#fff;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+        .layers{position:absolute;top:-24px;left:0;display:flex;gap:4px}
+        .layers button{background:#4b5563;color:#fff;border:none;width:22px;height:22px;font-size:13px;border-radius:3px;cursor:pointer}
+        .btn{padding:.45rem 1rem;background:#4f46e5;color:#fff;border:none;border-radius:8px;cursor:pointer}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+        .panel{display:grid;grid-template-columns:repeat(5,1fr);gap:.7rem;max-width:22rem;padding:1rem;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+        .thumb-btn{border:none;background:none;padding:0;border-radius:6px;overflow:hidden;cursor:pointer}
+        .thumb{width:70px;height:70px;object-fit:cover}
       `}</style>
     </div>
   );

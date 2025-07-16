@@ -21,6 +21,7 @@ import SearchDrawer from "./components/search";
 import Saved from "./components/saved";
 import TryOn from "./components/try-on";
 import AvatarCreator from "./components/AvatarCreator";
+import SavedLooks from "./components/SavedLooks"
 import { SearchDrawerProvider } from "./contexts/SearchDrawerContext";
 import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="/profile"       element={<Profile />} />
               <Route path="/saved" element={<Saved />} />
               <Route path="/user/:id" element={<Profile />} />
+              <Route path="/SavedLooks" element={<SavedLooks />} />
             </Route>
 
             {/* protected without layout */}
