@@ -204,36 +204,36 @@ def toggle_follow(follower_id, followed_id):
         )
 
 
-def get_feed(user_id, limit=20, offset=0):
+def get_feed(user_id: int, limit: int = 20, offset: int = 0):
     rows = sql_query(
         "SELECT followed_id FROM follows WHERE follower_id = ?",
         (user_id,),
-        fetch=True
+        fetch=True,
     )
     author_ids = [r["followed_id"] for r in rows] + [user_id]
+    ph = ",".join("?" * len(author_ids))  
 
-    placeholders = ",".join("?" * len(author_ids))
     query = f"""
-        SELECT p.*, u.username, u.avatar_url
-        FROM posts p
-        JOIN users u ON p.author_id = u.id
-        WHERE p.author_id IN ({placeholders})
+        SELECT  p.*,
+                u.username,
+                u.avatar_url,
+                CASE WHEN l.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
+        FROM    posts   p
+        JOIN    users   u ON u.id      = p.author_id
+        LEFT JOIN likes l ON l.post_id = p.id
+                          AND l.user_id = ?          
+        WHERE   p.author_id IN ({ph})
         ORDER BY p.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT   ? OFFSET ?
     """
+
     rows = sql_query(
         query,
-        (*author_ids, limit, offset),
-        fetch=True
+        (user_id, *author_ids, limit, offset),       
+        fetch=True,
     )
+    return [dict(r) for r in rows]
 
-    posts = []
-    for r in rows:
-        post = dict(r)
-        post["clothes"] = clothes_for_post(post["id"]) 
-        posts.append(post)
-
-    return posts
 
 def get_following(user_id):
     rows = sql_query("""

@@ -114,6 +114,7 @@ function PostCard({ post, onToggleLike }) {
 
 export default function Feed() {
   const auth = getAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [following, setFollowing] = useState([]);
   const [page, setPage] = useState(0);
@@ -258,7 +259,7 @@ export default function Feed() {
                 </button>
                 <button
                   className="empty-btn"
-                  onClick={() => alert("TODO: open upload")}
+                  onClick={() => navigate(`/post`)}
                 >
                   <FiPlus /> Post photo
                 </button>
@@ -270,8 +271,7 @@ export default function Feed() {
               <p>Your friends haven’t posted anything. Be the first!</p>
               <button
                 className="empty-btn"
-                onClick={() => alert("TODO: open upload")}
-              >
+                onClick={() => navigate(`/post`)}>
                 <FiPlus /> Post photo
               </button>
             </>

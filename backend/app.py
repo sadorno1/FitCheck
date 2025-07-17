@@ -352,14 +352,10 @@ def generate_outfit_of_the_day():
 
     style_words_db  = get_user_style(user_id)             
     style_words     = style_words_db or {}   
-    # ------------------------------------------------------------------
-    # 3) generate outfit IDs
-    # ------------------------------------------------------------------
+    
     outfit_ids = generate_ootd(style_words, closet)
 
-    # ------------------------------------------------------------------
-    # 4) return result
-    # ------------------------------------------------------------------
+
     return jsonify({
         "style":  style_words,
         "outfit": outfit_ids
