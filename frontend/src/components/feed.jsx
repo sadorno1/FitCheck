@@ -1,12 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FiHeart, FiChevronRight,FiChevronLeft, FiUserPlus, FiPlus } from "react-icons/fi";
+import { FiHeart, FiChevronRight,FiChevronLeft, FiUserPlus, FiPlus, FiBookmark } from "react-icons/fi";
 import { useSearchDrawer } from '../contexts/SearchDrawerContext';
 import { getAuth } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 import "./style.css";
 
 function FollowCircle({ user }) {
+  const navigate = useNavigate();
   return (
-    <div className="follow-circle">
+    <div
+      className="follow-circle"
+      onClick={() => navigate(`/user/${user.id}`)}   
+    >
       <img src={user.avatar_url} alt={user.username} />
       <span className="follow-name">{user.username}</span>
     </div>
@@ -59,7 +64,7 @@ function PostCard({ post, onToggleLike }) {
             className={`post-like-btn ${likedByMe ? "liked" : ""}`}
             onClick={() => onToggleLike(id)}
           >
-            <FiHeart />
+            <FiBookmark />
           </button>
           <span className="post-like-count">{like_count}</span>
         </div>
@@ -210,32 +215,31 @@ export default function Feed() {
   return (
     <div className="feed-container">
       {/* ── Follow strip / find‑friends button ───────────── */}
-{noFriends ? (
-  /* Show the single find‑friends button on top
-     **only** if there ARE posts (so feed isn't empty)     */
-  noPosts ? null : (
-    <button
-      className="find-friends-btn"
-      onClick={openSearch}
-    >
-      <FiUserPlus /> Find friends
-    </button>
-  )
-) : (
-  /* Normal strip when you follow people */
-  <div className="follow-strip-wrapper">
-    <div className="follow-strip" ref={stripRef}>
-      {following.map((u) => (
-        <FollowCircle key={u.id} user={u} />
-      ))}
-    </div>
-    {showArrow && (
-      <button className="strip-arrow" onClick={scrollRight}>
-        <FiChevronRight />
-      </button>
-    )}
-  </div>
-)}
+      {!noFriends && <span className="follow-label">Following</span>}
+      
+      {noFriends ? (
+        <div className="follow-strip-wrapper empty">
+          <button className="find-friends-btn" onClick={openSearch}>
+            <FiUserPlus />
+            <span>Find friends</span>
+          </button>
+        </div>
+      ) : (
+        <div className="follow-strip-wrapper">
+          {/* scrollable strip */}
+          <div className="follow-strip" ref={stripRef}>
+            {following.map((u) => (
+              <FollowCircle key={u.id} user={u} />
+            ))}
+          </div>
+
+          {showArrow && (
+            <button className="strip-arrow" onClick={scrollRight}>
+              <FiChevronRight />
+            </button>
+          )}
+        </div>
+      )}
 
 
       {/* Empty‑state vs posts list */}

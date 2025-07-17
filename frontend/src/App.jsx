@@ -22,6 +22,8 @@ import Saved from "./components/saved";
 import TryOn from "./components/try-on";
 import AvatarCreator from "./components/AvatarCreator";
 import SavedLooks from "./components/SavedLooks"
+import EditPreferences from "./components/EditPreferences";
+import OtherUserProfile from "./components/OtherUserProfile";
 import { SearchDrawerProvider } from "./contexts/SearchDrawerContext";
 import { AuthProvider } from "./contexts/authContext";
 import "./components/style.css";
@@ -29,7 +31,7 @@ import { onAuthStateChanged, getAuth } from "firebase/auth";
 
 
 export default function App() {
-  localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
+  // localStorage.removeItem("hasCompletedQuiz"); // REMOVE LATER JUST FOR TESTING
   return (
     <AuthProvider>
         <SearchDrawerProvider>
@@ -54,8 +56,9 @@ export default function App() {
               <Route path="/try-on"     element={<TryOn />} />
               <Route path="/profile"       element={<Profile />} />
               <Route path="/saved" element={<Saved />} />
-              <Route path="/user/:id" element={<Profile />} />
+              <Route path="/user/:id" element={<OtherUserProfile />} />
               <Route path="/SavedLooks" element={<SavedLooks />} />
+              <Route path="/EditPreferences" element={<EditPreferences />} />
             </Route>
 
             {/* protected without layout */}

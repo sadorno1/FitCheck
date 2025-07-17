@@ -261,18 +261,6 @@ def clothes_for_post(post_id) -> list[dict]:
     return [dict(r) for r in rows]
 
 #searches
-#search routes
-def top_users(limit, current_id):
-    return sql_query("""
-        SELECT u.id, u.username, u.avatar_url,
-               EXISTS (SELECT 1 FROM follows
-                       WHERE follower_id = ? AND followed_id = u.id) AS isFollowing,
-               (SELECT COUNT(*) FROM follows f WHERE f.followed_id = u.id) AS followers
-        FROM users u
-        WHERE u.id != ?
-        ORDER BY followers DESC
-        LIMIT ?
-    """, (current_id, current_id, limit), fetch=True)
 
 def search_users(q, current_id):
     q_pattern = f'%{q.lower()}%'
@@ -316,3 +304,4 @@ def recent_searches(uid):
         ORDER BY s.created_at DESC
         LIMIT 10
     """, (uid, uid), fetch=True)
+

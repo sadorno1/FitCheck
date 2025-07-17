@@ -13,14 +13,14 @@ from db.init_db import (
     init_db, DB_NAME, get_or_create_user_id,sql_query,
     create_post, toggle_like, toggle_follow, get_feed, get_following,
     add_clothes_to_post, clothes_for_post, search_users,
-    recent_searches, top_users  
+    recent_searches
 )
 from db.get_closet_by_user import get_closet_by_user, get_user_style
 from db.store_quiz_result   import store_quiz_result
 from services.gemini import generate_ootd
 
 init_db()
-coso = sql_query("SELECT * FROM clothes WHERE user_id = ?", (3,), fetch = True)
+coso = sql_query("SELECT * FROM clothes WHERE user_id = ?", (4,), fetch = True)
 print([dict(r) for r in coso])
 
 app = Flask(__name__)
@@ -217,6 +217,22 @@ def api_liked_posts():
 
     return {"posts": posts}
 
+@app.get("/public_profile/<int:user_id>")
+def public_profile(user_id):
+    row = sql_query(
+        "SELECT username, avatar_url, bio FROM users WHERE id = ?",
+        (user_id,), fetch=True
+    )
+    return jsonify(dict(row[0])) if row else (jsonify(error="404"), 404)
+
+@app.get("/public_posts/<int:user_id>")
+def public_posts(user_id):
+    rows = sql_query(
+        "SELECT id, image_url, caption FROM posts WHERE author_id = ? ORDER BY id DESC",
+        (user_id,), fetch=True
+    )
+    return jsonify([dict(r) for r in rows])
+
 
 # ───────────────────────────── Avatar ───────────────────────────── #
 @app.post("/avatar")
@@ -250,6 +266,7 @@ def api_save_avatar():
     )
 
     return {}, 204
+
 
 
 @app.get("/avatar")
@@ -406,6 +423,76 @@ def fetch_ootd_ids():
         "date":   today,
         "outfit": json.loads(row[0]["item_ids"]),
     }), 200
+
+
+@app.get("/fetch_profile")
+@require_auth
+def fetch_profile():
+    uid     = g.current_user["uid"]
+    user_id = get_or_create_user_id(uid)
+
+    row = sql_query(
+        """
+        SELECT username AS displayName,
+               avatar_url AS photoURL,
+               bio, style, age, gender
+        FROM   users
+        WHERE  id = ?
+        """,
+        (user_id,),
+        fetch=True,
+    )
+
+    profile = dict(row[0]) if row else {}
+    return jsonify(profile), 200
+
+
+@app.get("/fetch_posts")
+@require_auth
+def fetch_posts():
+    uid     = g.current_user["uid"]
+    user_id = get_or_create_user_id(uid)
+
+    rows = sql_query(
+        "SELECT id, image_url, caption "
+        "FROM posts WHERE author_id = ? ORDER BY id DESC",
+        (user_id,),
+        fetch=True,
+    )
+
+    posts = [dict(r) for r in rows]        
+    return jsonify(posts), 200
+
+
+@app.post("/update_preferences")
+@require_auth
+def update_preferences():
+    """Update basic profile fields."""
+    data = request.get_json(force=True) or {}
+    firebase_uid = g.current_user["uid"]
+    user_id      = get_or_create_user_id(firebase_uid)
+
+    sql_query(
+        """
+        UPDATE users
+        SET username    = COALESCE(NULLIF(?,''), username),
+            age         = COALESCE(NULLIF(?,''), age),
+            gender      = COALESCE(NULLIF(?,''), gender),
+            bio         = COALESCE(NULLIF(?,''), bio),
+            style      = COALESCE(NULLIF(?,''), style)
+        WHERE id = ?
+        """,
+        (
+            data.get("displayName"),
+            data.get("age"),
+            data.get("gender"),
+            data.get("bio"),
+            data.get("style"),
+            user_id,
+        ),
+    )
+    return {}, 204
+
 
 
 if __name__ == "__main__":
