@@ -11,6 +11,8 @@ import {
 import "./style.css";
 import { getAuth } from "firebase/auth";  
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/authContext";
+
 
 
 const GENDERS = ["Female", "Male", "Non‑binary", "Prefer not to say"];
@@ -80,7 +82,11 @@ const navigate = useNavigate();
 
   /* step control */
   const [step, setStep] = useState(0);
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  const next = () => {
+    if (step < STEPS.length - 1 && STEPS[step].ready()) {
+      setStep((s) => s + 1);
+    }
+  };
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   /* form submit */
@@ -107,7 +113,6 @@ const navigate = useNavigate();
 
     if (res.ok) {
         console.log("Quiz saved successfully!");
-        localStorage.setItem("hasCompletedQuiz", "true");
         navigate("/");
     } else {
       alert("Something went wrong saving your quiz.");

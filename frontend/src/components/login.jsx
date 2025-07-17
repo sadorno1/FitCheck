@@ -3,6 +3,18 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { useNavigate } from "react-router-dom";   
 import "./style.css";
+const API_ROOT = "http://localhost:5000";
+
+const authedFetch = async (url, options = {}) => {
+  const idToken = await auth.currentUser.getIdToken();
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+};
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -13,15 +25,13 @@ const Login = () => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      const profile = await authedFetch(`${API_ROOT}/fetch_profile`).then(r => r.json());
 
-      const hasCompletedQuiz = localStorage.getItem("hasCompletedQuiz");
-
-      if (!hasCompletedQuiz) {
-        localStorage.setItem("hasCompletedQuiz", "true");
-        navigate("/quiz");
-      } else {
-        navigate("/");
-      }
+    if (!profile.displayName) {
+  navigate("/quiz", { replace:true });    
+} else {
+  navigate("/", { replace:true });        
+}
 
     } catch (err) {
       alert(err.message);                        
