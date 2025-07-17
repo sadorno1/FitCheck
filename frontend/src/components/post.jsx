@@ -143,7 +143,7 @@ export default function PostCreator() {
       </button>
 
       <button onClick={postOOTD} style={{ ...styles.postButton, marginTop: "0.5rem", background: "#6e1d9f" }}>
-        Post OOTD
+        Tag OOTD
       </button>
     </div>
   );

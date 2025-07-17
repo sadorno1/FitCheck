@@ -30,11 +30,11 @@ CORS(
         "http://localhost:3000",  
         "http://127.0.0.1:3000",   
     ]}},
-    supports_credentials=True,          #
+    supports_credentials=True,          
     allow_headers=["Content-Type", "Authorization"],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 )
-# ────────────────────────── Closet & Quiz ────────────────────────── #
+# Closet & Quiz 
 @app.route("/upload_item", methods=["POST"])
 @require_auth
 def upload_item():
@@ -101,7 +101,6 @@ def check_username():
     return jsonify(available=len(row) == 0)
 
 
-# ─────────────────────────── Social Feed ─────────────────────────── #
 @app.post("/posts")
 @require_auth
 def api_create_post():
@@ -132,7 +131,6 @@ def api_like(post_id):
 @app.post("/users/<int:target_id>/follow")
 @require_auth
 def api_follow(target_id):
-    # current user’s numeric ID
     follower_id = get_or_create_user_id(g.current_user["uid"])
     toggle_follow(follower_id, target_id)
     return {}, 204
@@ -365,25 +363,16 @@ def generate_outfit_of_the_day():
 @app.post("/save_ootd")
 @require_auth
 def save_ootd():
-    """
-    Body:
-      {
-        "outfit": [12,45],        # <= list[int] clothing ids
-        "name":   "OOTD 2025‑07‑17"  (optional, ignored here)
-      }
-    """
     data = request.get_json(force=True) or {}
     item_ids = data.get("outfit", [])
     if not isinstance(item_ids, list) or not all(isinstance(i, int) for i in item_ids):
         return jsonify(error="outfit must be a list of ints"), 400
 
-    # who is this?
     firebase_uid = g.current_user["uid"]
     user_id      = get_or_create_user_id(firebase_uid)
 
     today = datetime.date.today().isoformat()  # 'YYYY‑MM‑DD'
 
-    # upsert: replace if they already saved today
     sql_query(
         """
         INSERT INTO ootd (user_id, date, item_ids)
