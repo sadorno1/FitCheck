@@ -15,26 +15,31 @@ const authedFetch = async (url, options = {}) => {
 
 export default function RequireAuth() {
   const { user, authReady } = useAuth();
-  const location            = useLocation();            
-  const [displayName, setName] = useState(null);         
+  const location = useLocation();
+
+  const [displayName, setName]   = useState("");
+  const [loadingProfile, setLP]  = useState(true);   // NEW
 
   useEffect(() => {
-    if (authReady && user) {
-      authedFetch(`${API_ROOT}/fetch_profile`)
-        .then((r) => r.json())
-        .then((p) => setName(p.displayName || ""))       
-        .catch(() => setName(""));
-    }
-  }, [authReady, user, location.pathname]);               
+    if (!authReady || !user) return;
 
-  if (!authReady || displayName === null)
+    setLP(true);                  // mark profile as *loading*
+    authedFetch(`${API_ROOT}/fetch_profile`)
+      .then(r => r.json())
+      .then(p => setName(p.displayName || ""))
+      .catch(() => setName(""))
+      .finally(() => setLP(false));                  // done
+  }, [authReady, user, location.pathname]);
+
+  // ⛔ don’t make redirect decisions while loadingProfile is true
+  if (!authReady || loadingProfile)
     return <div className="closet-loading">Loading…</div>;
 
-  if (!user)                 return <Navigate to="/intro" replace />;
+  if (!user)                        return <Navigate to="/intro" replace />;
   if (!displayName && location.pathname !== "/quiz")
-                             return <Navigate to="/quiz"  replace />;
+                                    return <Navigate to="/quiz"  replace />;
   if (displayName && location.pathname === "/quiz")
-                             return <Navigate to="/"      replace />;
+                                    return <Navigate to="/"      replace />;
 
   return <Outlet />;
 }
