@@ -3,8 +3,8 @@ from flask_cors import CORS
 from auth import require_auth
 from routes.upload_item import upload_item_handler
 import io, requests, json
-import google.generativeai as genai
 from PIL import Image
+import datetime
 Resample = getattr(Image, "Resampling", Image)
 LANCZOS  = getattr(Resample, "LANCZOS", Image.LANCZOS)
 from services.firebase_upload import upload_to_firebase
@@ -15,8 +15,9 @@ from db.init_db import (
     add_clothes_to_post, clothes_for_post, search_users,
     recent_searches, top_users  
 )
-from db.get_closet_by_user import get_closet_by_user
+from db.get_closet_by_user import get_closet_by_user, get_user_style
 from db.store_quiz_result   import store_quiz_result
+from services.gemini import generate_ootd
 
 init_db()
 coso = sql_query("SELECT * FROM clothes WHERE user_id = ?", (3,), fetch = True)
@@ -26,10 +27,10 @@ app = Flask(__name__)
 CORS(
     app,
     resources={r"/*": {"origins": [
-        "http://localhost:3000",   # CRA / Vite
-        "http://127.0.0.1:3000",   # some browsers send this Origin
+        "http://localhost:3000",  
+        "http://127.0.0.1:3000",   
     ]}},
-    supports_credentials=True,          # because you send a bearer token
+    supports_credentials=True,          #
     allow_headers=["Content-Type", "Authorization"],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 )
@@ -321,5 +322,91 @@ def list_looks():
     )
     return jsonify([dict(r) for r in rows])
 # ─────────────────────────────────────────────────────────────────── #
+
+
+@app.post("/generate_ootd")
+@require_auth
+def generate_outfit_of_the_day():
+    firebase_uid = g.current_user["uid"]
+    user_id      = get_or_create_user_id(firebase_uid)
+    closet       = get_closet_by_user(user_id)
+    if not closet:
+        return jsonify(error="You have no items in your closet!"), 400
+
+    style_words_db  = get_user_style(user_id)             
+    style_words     = style_words_db or {}   
+    # ------------------------------------------------------------------
+    # 3) generate outfit IDs
+    # ------------------------------------------------------------------
+    outfit_ids = generate_ootd(style_words, closet)
+
+    # ------------------------------------------------------------------
+    # 4) return result
+    # ------------------------------------------------------------------
+    return jsonify({
+        "style":  style_words,
+        "outfit": outfit_ids
+    }), 200
+
+
+@app.post("/save_ootd")
+@require_auth
+def save_ootd():
+    """
+    Body:
+      {
+        "outfit": [12,45],        # <= list[int] clothing ids
+        "name":   "OOTD 2025‑07‑17"  (optional, ignored here)
+      }
+    """
+    data = request.get_json(force=True) or {}
+    item_ids = data.get("outfit", [])
+    if not isinstance(item_ids, list) or not all(isinstance(i, int) for i in item_ids):
+        return jsonify(error="outfit must be a list of ints"), 400
+
+    # who is this?
+    firebase_uid = g.current_user["uid"]
+    user_id      = get_or_create_user_id(firebase_uid)
+
+    today = datetime.date.today().isoformat()  # 'YYYY‑MM‑DD'
+
+    # upsert: replace if they already saved today
+    sql_query(
+        """
+        INSERT INTO ootd (user_id, date, item_ids)
+        VALUES (?,?,?)
+        ON CONFLICT(user_id, date) DO UPDATE
+        SET item_ids = excluded.item_ids
+        """,
+        (user_id, today, json.dumps(item_ids)),
+    )
+    return {}, 204      
+
+@app.get("/ootd_ids")
+@require_auth
+def fetch_ootd_ids():
+    """
+    Returns:
+      { "date": "2025‑07‑17", "outfit": [12,45] }
+      or 404 if none saved today
+    """
+    firebase_uid = g.current_user["uid"]
+    user_id      = get_or_create_user_id(firebase_uid)
+    today        = datetime.date.today().isoformat()
+
+    row = sql_query(
+        "SELECT item_ids FROM ootd WHERE user_id = ? AND date = ?",
+        (user_id, today),
+        fetch=True,
+    )
+    if not row:
+        return jsonify(error="No OOTD saved today"), 404
+
+    return jsonify({
+        "date":   today,
+        "outfit": json.loads(row[0]["item_ids"]),
+    }), 200
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

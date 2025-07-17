@@ -971,3 +971,17 @@ body {
 
 .nav-btn.left  { order: 0; }
 .nav-btn.right { order: 2; }
+
+
+/* ---- OOTD panel ---- */
+.ootd-wrap      {margin:1.5rem 0;padding:1rem;border:2px dashed #6e1d9f;border-radius:12px;background:#faf7ff}
+.ootd-header    {display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
+.ootd-header h3 {margin:0;font-size:1.1rem;color:#6e1d9f}
+.ootd-close     {background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6e1d9f;line-height:1}
+
+.ootd-grid      {display:grid;grid-template-columns:1fr 160px;gap:1rem}
+.ootd-preview   {display:flex;flex-direction:column;gap:.5rem;align-items:center;justify-content:center;min-height:220px}
+.ootd-img       {width:140px;height:140px;object-fit:contain;border:1px solid #d1d5db;border-radius:8px;background:#fff}
+.ootd-none      {color:#6b7280;text-align:center}
+
+.ootd-actions   {display:flex;flex-direction:column;gap:.8rem;align-items:center}

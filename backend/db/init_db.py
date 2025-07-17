@@ -30,6 +30,12 @@ def init_db():
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+""","""CREATE TABLE IF NOT EXISTS ootd (
+    user_id     INTEGER NOT NULL,
+    date        TEXT    NOT NULL,        -- 'YYYY‑MM‑DD'
+    item_ids    TEXT    NOT NULL,        -- JSON array e.g. "[12,45]"
+    PRIMARY KEY (user_id, date)
+);
 """,
         """
         CREATE TABLE IF NOT EXISTS users (

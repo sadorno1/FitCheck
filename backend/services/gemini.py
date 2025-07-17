@@ -1,25 +1,3 @@
-import os
-import json
-import difflib
-import requests
-import google.generativeai as genai
-import datetime
-import hashlib
-from dotenv import load_dotenv
-from google.generativeai import types
-load_dotenv()
-
-# Configure Gemini
-genai.configure(api_key=os.getenv('GENAI_API_KEY'))
-
-
-
-ALLOWED_TYPES      = ["shirt", "dress", "pants", "jeans", "shorts",
-                      "blazer", "jacket"]
-ALLOWED_COLORS     = ["black", "white", "gray", "red", "orange", "yellow",
-                      "green", "cyan", "blue", "purple"]
-ALLOWED_ETIQUETTES = ["casual", "formal", "business"]
-
 # ---- config ----
 import os, json, difflib, datetime, hashlib, requests, google.generativeai as genai
 from dotenv import load_dotenv
@@ -37,7 +15,7 @@ def _closest(word, choices):
     return difflib.get_close_matches(word.lower(), choices, n=1, cutoff=0.0)[0]
 
 # ---- Gemini vision tagging --------------------------------------------------
-def gemini_tag_image(image_url: str) -> dict:
+def gemini_tag_image(image_url):
     img_bytes = requests.get(image_url).content
     img_part  = {"mime_type": "image/jpeg", "data": img_bytes}
 
@@ -64,16 +42,12 @@ def gemini_tag_image(image_url: str) -> dict:
         "description": str(data.get("description", "")).strip()[:160]
     }
 
-def generate_ootd(style_keywords: str, closet_items: list) -> list[int]:
-    """
-    Returns a list of item IDs for an outfit, e.g. [top_id, bottom_id] or [dress_id].
-    The first element is ALWAYS the top (or the dress).
-    """
+def generate_ootd(style_keywords, closet_items):
 
     # -- compress closet to avoid token bloat -------------------------------
     mini_closet = [
         { "id": c["id"], "type": c["type"], "color": c["color"],
-          "etiquette": c["etiquette"] }
+          "etiquette": c["etiquette"], "description": c["description"] }
         for c in closet_items
     ]
 
@@ -86,7 +60,7 @@ def generate_ootd(style_keywords: str, closet_items: list) -> list[int]:
         f"You are a fashion stylist.\n"
         f"STYLE WORDS: {style_keywords}\n\n"
         f"CLOSET (JSON array): {json.dumps(mini_closet)}\n\n"
-        "Goal: choose either (1) one dress, OR (2) one top and one bottom, that "
+        "Goal: choose either (1) one dress, OR (2) one top/shirt/blazer/jacket and one bottom/pants/shorts/jeans, that "
         "match the style words as closely as possible (color palette, vibe, etiquette).\n"
         "Respond with **ONLY** a JSON array of IDs in this exact order:\n"
         "• If you choose a dress → [dress_id]\n"
@@ -95,7 +69,7 @@ def generate_ootd(style_keywords: str, closet_items: list) -> list[int]:
         f"SEED: {daily_seed}"
     )
 
-    model   = genai.GenerativeModel("gemini-1.5-flash")
+    model   = genai.GenerativeModel("gemini-2.5-flash")
     resp    = model.generate_content(
         prompt,
         generation_config={
@@ -104,11 +78,10 @@ def generate_ootd(style_keywords: str, closet_items: list) -> list[int]:
         }
     )
 
-    raw_json = resp.text or resp.candidates[0].content.parts[0].text
-    clean    = _clean_json(raw_json)
+    info = resp.text or resp.candidates[0].content.parts[0].text
 
     try:
-        outfit_ids = json.loads(clean)
+        outfit_ids = json.loads(info)
         # sanity‑check list of ints
         if (isinstance(outfit_ids, list) and
             all(isinstance(i, int) for i in outfit_ids) and
