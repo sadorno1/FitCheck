@@ -389,13 +389,7 @@ body {
   justify-content: center;
   gap: 24px;
 }
-.outfit-large {
-  max-width: 70%;
-  max-height: 80%;
-  object-fit: contain;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-}
+
 .outfit-slider .nav {
   background: none;
   border: none;
@@ -425,8 +419,21 @@ body {
 }
 .post-image {
   width: 100%;
-  object-fit: cover;
   max-height: 500px;
+  min-height: 200px;
+  height: auto;
+  border-radius: 12px;
+  object-fit: contain;
+  background-color: #f8f8f8;
+}
+
+/* Large view in the slider overlay */
+.outfit-large {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain; 
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);   
 }
 .post-actions {
   display: flex;

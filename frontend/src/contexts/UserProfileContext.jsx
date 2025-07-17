@@ -9,7 +9,6 @@ import { getAuth } from "firebase/auth";
 
 const API_ROOT = "http://localhost:5000";
 
-/* helper: GET/POST with Firebase ID‑token */
 const authedFetch = async (url, opts = {}) => {
   const idToken = await getAuth().currentUser?.getIdToken();
   return fetch(url, {
@@ -18,12 +17,11 @@ const authedFetch = async (url, opts = {}) => {
   }).then((r) => (r.ok ? r.json() : Promise.reject(r)));
 };
 
-/* -------- context setup -------- */
 const UserProfileContext = createContext();
 
 /* Provider */
 export const UserProfileProvider = ({ children }) => {
-  const [profile, setProfile] = useState(null);   // null = not fetched yet
+  const [profile, setProfile] = useState(null);   
   const [ready, setReady] = useState(false);
 
   /* fetch once per Firebase‑user */
@@ -32,7 +30,7 @@ export const UserProfileProvider = ({ children }) => {
       const data = await authedFetch(`${API_ROOT}/fetch_profile`);
       setProfile(data);
     } catch {
-      setProfile({});          // fallback on error
+      setProfile({});         
     } finally {
       setReady(true);
     }
@@ -46,7 +44,6 @@ export const UserProfileProvider = ({ children }) => {
     return unsub;
   }, [refreshProfile]);
 
-  /* local updater (e.g. after quiz or settings edit) */
   const updateProfile = (patch) =>
     setProfile((prev) => ({ ...prev, ...patch }));
 
