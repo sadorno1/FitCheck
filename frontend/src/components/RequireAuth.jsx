@@ -1,11 +1,13 @@
 // src/components/RequireAuth.jsx
-import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/authContext";
 
 export default function RequireAuth() {
-  const { user, loading } = useAuth();
+  const { user, authReady } = useAuth();
 
-  if (loading) return null;
+  // show a spinner (or null) until Firebase finishes
+  if (!authReady) return <div className="closet-loading">Loading…</div>;
+
+  // once ready, decide normally
   return user ? <Outlet /> : <Navigate to="/intro" replace />;
 }
