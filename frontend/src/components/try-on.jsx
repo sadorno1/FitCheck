@@ -15,16 +15,23 @@ const authedFetch = async (url, options = {}) => {
   });
 };
 
+/* absolute‑ize relative URLs so Flask can fetch */
 const absURL = (u) => (u?.startsWith("http") ? u : `${window.location.origin}${u}`);
 
-
+/**
+ * TryOn – virtual dressing room.
+ * --------------------------------------------------
+ * • Loads avatar, closet items, PLUS clothes from liked posts.
+ * • Lets user drag / resize items onto avatar and save a composed look.
+ */
 export default function TryOn() {
   const [avatarSrc, setAvatarSrc] = useState(null);
-  const [closet, setCloset]       = useState([]);   
-  const [stickers, setStickers]   = useState([]);   
+  const [closet, setCloset]       = useState([]);   // merged array   [{id,image_url,type,origin}]
+  const [stickers, setStickers]   = useState([]);   // placed items   [{key,src,x,y,w,h,z}]
   const [showPanel, setShowPanel] = useState(false);
-  const [selected, setSelected]   = useState(null); 
-  const [saving, setSaving]       = useState(false);
+  const [selected, setSelected]   = useState(null); // key of selected sticker
+  const [saving, setSaving]       = useState(false); 
+  const [lookName, setLookName]   = useState(""); // NEW – user‑chosen name
   const navigate                  = useNavigate();
 
   /* ---------- data loading ---------- */
@@ -52,7 +59,7 @@ export default function TryOn() {
       const combined = [...closetItems, ...likedClothes];
       const uniq = Object.values(
         combined.reduce((acc, item) => {
-          if (!acc[item.id]) acc[item.id] = item; 
+          if (!acc[item.id]) acc[item.id] = item; // first wins
           return acc;
         }, {})
       );
@@ -70,7 +77,6 @@ export default function TryOn() {
       ...p,
       { key, src: item.image_url, x: 140, y: 140, w: 120, h: 120, z: nextZ() },
     ]);
-    // Panel stays open until user clicks "Close"
     setSelected(key);
   };
 
@@ -83,10 +89,12 @@ export default function TryOn() {
   /* ---------- save look ---------- */
   const saveLook = async () => {
     if (!avatarSrc || saving) return;
+    if (!lookName.trim()) return alert("Please enter a name for your look.");
     setSaving(true);
     try {
       const rect = document.getElementById("playground").getBoundingClientRect();
       const payload = {
+        name: lookName.trim(), 
         avatar: absURL(avatarSrc),
         stickers: stickers.map((s) => ({ ...s, src: absURL(s.src) })),
         canvas: { w: Math.round(rect.width), h: Math.round(rect.height) },
@@ -97,6 +105,7 @@ export default function TryOn() {
         body: JSON.stringify(payload),
       });
       alert("Look saved!");
+      setLookName("");
     } catch (err) {
       console.error(err);
       alert("Failed to save look");
@@ -135,9 +144,7 @@ export default function TryOn() {
               <img src={s.src} alt="garment" className="stickerImg" draggable={false} />
               {selected === s.key && (
                 <>
-                  <button className="del" onClick={() => remove(s.key)}>
-                    ×
-                  </button>
+                  <button className="del" onClick={() => remove(s.key)}>×</button>
                   <div className="layers">
                     <button onClick={() => bringFwd(s.key)}>⬆</button>
                     <button onClick={() => sendBack(s.key)}>⬇</button>
@@ -155,6 +162,13 @@ export default function TryOn() {
           {showPanel ? "Close" : "Add Clothes"}
         </button>
         <button className="btn" onClick={() => navigate("/AvatarCreator")}>Change Avatar</button>
+        <input
+          type="text"
+          value={lookName}
+          onChange={(e) => setLookName(e.target.value)}
+          placeholder="Name this look…"
+          className="nameInput"
+        />
         <button className="btn" disabled={saving} onClick={saveLook}>
           {saving ? "Saving…" : "Save Look"}
         </button>
@@ -177,6 +191,7 @@ export default function TryOn() {
           ))}
         </div>
       )}
+
 
       {/* inline styles */}
       <style>{`

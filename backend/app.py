@@ -270,11 +270,12 @@ def api_get_avatar():
 @app.post("/looks")
 @require_auth
 def save_look():
-    data        = request.get_json(force=True) or {}
-    avatar_url  = data.get("avatar")
-    stickers    = data.get("stickers", [])
-    canvas      = data.get("canvas", {})
-    cw, ch      = int(canvas.get("w", 480)), int(canvas.get("h", 480))
+    data  = request.get_json(force=True) or {}
+    name = (data.get("name") or "Untitled Look").strip()
+    avatar_url = data.get("avatar")
+    stickers = data.get("stickers", [])
+    canvas = data.get("canvas", {})
+    cw, ch = int(canvas.get("w", 480)), int(canvas.get("h", 480))
 
     if not avatar_url:
         return jsonify(error="avatar field required"), 400
@@ -303,8 +304,8 @@ def save_look():
 
     user_id = get_or_create_user_id(firebase_uid)
     sql_query(
-        "INSERT INTO looks (user_id, image_url, layout_json) VALUES (?,?,?)",
-        (user_id, image_url, json.dumps(stickers))
+        "INSERT INTO looks (user_id, name, image_url, layout_json) VALUES (?,?,?,?)",
+        (user_id, name, image_url, json.dumps(stickers))
     )
     return {}, 204
 
@@ -315,7 +316,7 @@ def list_looks():
     user_id = get_or_create_user_id(uid)
 
     rows = sql_query(
-        "SELECT id, image_url, created_at FROM looks WHERE user_id = ? ORDER BY id DESC",
+        "SELECT id, name, image_url, created_at FROM looks WHERE user_id = ? ORDER BY id DESC",
         (user_id,), fetch=True
     )
     return jsonify([dict(r) for r in rows])
