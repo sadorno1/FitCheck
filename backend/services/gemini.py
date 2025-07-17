@@ -1,6 +1,7 @@
 # ---- config ----
 import os, json, difflib, datetime, hashlib, requests, google.generativeai as genai
 from dotenv import load_dotenv
+import random
 load_dotenv()
 genai.configure(api_key=os.getenv("GENAI_API_KEY"))
 
@@ -52,8 +53,7 @@ def generate_ootd(style_keywords, closet_items):
     ]
 
     # -- deterministic daily seed so user doesn’t get same outfit ----------
-    today      = datetime.date.today().isoformat()
-    daily_seed = int(hashlib.sha256(today.encode()).hexdigest(), 16) % (10**8)
+    daily_seed = random.randint(0, 10**8)
 
     # -- prompt -------------------------------------------------------------
     prompt = (
@@ -61,7 +61,7 @@ def generate_ootd(style_keywords, closet_items):
         f"STYLE WORDS: {style_keywords}\n\n"
         f"CLOSET (JSON array): {json.dumps(mini_closet)}\n\n"
         "Goal: choose either (1) one dress, OR (2) one top/shirt/blazer/jacket and one bottom/pants/shorts/jeans, that "
-        "match the style words as closely as possible (color palette, vibe, etiquette).\n"
+        "try to match the style words (color palette, vibe, etiquette), but prioritize randomness, like pls dont give me the same outfit when i call again\n"
         "Respond with **ONLY** a JSON array of IDs in this exact order:\n"
         "• If you choose a dress → [dress_id]\n"
         "• If you choose top+bottom → [top_id, bottom_id] (TOP FIRST!)\n"
@@ -70,25 +70,28 @@ def generate_ootd(style_keywords, closet_items):
     )
 
     model   = genai.GenerativeModel("gemini-2.5-flash")
-    resp    = model.generate_content(
-        prompt,
-        generation_config={
-            "temperature": 0.4,
+    generation_config={
+            "temperature": 0.8,
+            "candidate_count": 3,     
             "response_mime_type": "application/json"
         }
-    )
+    
 
-    info = resp.text or resp.candidates[0].content.parts[0].text
+    resp = model.generate_content(prompt, generation_config=generation_config)
 
-    try:
-        outfit_ids = json.loads(info)
-        # sanity‑check list of ints
-        if (isinstance(outfit_ids, list) and
-            all(isinstance(i, int) for i in outfit_ids) and
-            1 <= len(outfit_ids) <= 2):
-            return outfit_ids
-    except (json.JSONDecodeError, TypeError):
-        pass
+    valid = []
+    for c in resp.candidates:
+        try:
+            ids = json.loads(c.content.parts[0].text)
+            if isinstance(ids, list) and 1 <= len(ids) <= 2 and all(isinstance(i, int) for i in ids):
+                valid.append(ids)
+        except json.JSONDecodeError:
+            pass
+
+    if not valid:
+        raise RuntimeError("No valid outfits returned")
+
+    return random.choice(valid) 
 
     # ---------- fallback: simplest match if model misbehaves --------------
     # find first dress or first top+bottom

@@ -27,9 +27,9 @@ const authedFetch = async (url, options = {}) => {
 const NAV_ITEMS = [
   { label: "Home",      route: "/",        icon: FiHome },
   { label: "Search",    route: "/search",  icon: FiSearch },
-  { label: "Post",      route: "/post",    icon: FiPlusSquare },
   { label: "Saved",     route: "/saved",   icon: FiBookmark },
   { label: "My Closet", route: "/closet",  icon: FiBox },
+  { label: "Post",      route: "/post",    icon: FiPlusSquare },
   { label: "Profile",   route: "/Profile", icon: FiUser },
 ];
 
