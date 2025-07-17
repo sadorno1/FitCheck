@@ -1,45 +1,33 @@
+// src/components/RequireAuth.jsx
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/authContext";
-import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
-
-const API_ROOT = "http://localhost:5000";
-
-const authedFetch = async (url, options = {}) => {
-  const idToken = await getAuth().currentUser?.getIdToken();
-  return fetch(url, {
-    ...options,
-    headers: { ...(options.headers || {}), Authorization: `Bearer ${idToken}` },
-  });
-};
+import { useUserProfile } from "../contexts/UserProfileContext";
 
 export default function RequireAuth() {
-  const { user, authReady } = useAuth();
-  const location = useLocation();
+  const { user, authReady }           = useAuth();
+  const { profile, profileReady }     = useUserProfile();
+  const location                      = useLocation();
 
-  const [displayName, setName]   = useState("");
-  const [loadingProfile, setLP]  = useState(true);   // NEW
-
-  useEffect(() => {
-    if (!authReady || !user) return;
-
-    setLP(true);                  // mark profile as *loading*
-    authedFetch(`${API_ROOT}/fetch_profile`)
-      .then(r => r.json())
-      .then(p => setName(p.displayName || ""))
-      .catch(() => setName(""))
-      .finally(() => setLP(false));                  // done
-  }, [authReady, user, location.pathname]);
-
-  // ⛔ don’t make redirect decisions while loadingProfile is true
-  if (!authReady || loadingProfile)
+  /* still waiting for Firebase OR profile fetch → show spinner */
+  if (!authReady || !profileReady) {
     return <div className="closet-loading">Loading…</div>;
+  }
 
-  if (!user)                        return <Navigate to="/intro" replace />;
-  if (!displayName && location.pathname !== "/quiz")
-                                    return <Navigate to="/quiz"  replace />;
-  if (displayName && location.pathname === "/quiz")
-                                    return <Navigate to="/"      replace />;
+  /* not logged in → intro */
+  if (!user) {
+    return <Navigate to="/intro" replace />;
+  }
 
+  /* logged in but no displayName → force quiz (except when already there) */
+  if (!profile?.displayName && location.pathname !== "/quiz") {
+    return <Navigate to="/quiz" replace />;
+  }
+
+  /* already has displayName but somehow on /quiz → kick to feed */
+  if (profile?.displayName && location.pathname === "/quiz") {
+    return <Navigate to="/" replace />;
+  }
+
+  /* authenticated & profile complete → render protected routes */
   return <Outlet />;
 }

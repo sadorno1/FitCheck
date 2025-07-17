@@ -11,6 +11,7 @@ import {
 import "./style.css";
 import { getAuth } from "firebase/auth";  
 import { useNavigate } from "react-router-dom";
+import { useUserProfile } from "../contexts/UserProfileContext";
 
 
 
@@ -89,6 +90,7 @@ const navigate = useNavigate();
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   /* form submit */
+   const { refreshProfile } = useUserProfile();
    const saveQuiz = async () => {
     const idToken = auth.currentUser && await auth.currentUser.getIdToken();
 
@@ -112,6 +114,7 @@ const navigate = useNavigate();
 
     if (res.ok) {
         console.log("Quiz saved successfully!");
+        await refreshProfile();  
         navigate("/");
     } else {
       alert("Something went wrong saving your quiz.");

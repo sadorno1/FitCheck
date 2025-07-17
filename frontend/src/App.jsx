@@ -26,12 +26,14 @@ import EditPreferences from "./components/EditPreferences";
 import OtherUserProfile from "./components/OtherUserProfile";
 import { SearchDrawerProvider } from "./contexts/SearchDrawerContext";
 import { AuthProvider } from "./contexts/authContext";
+import { UserProfileProvider } from "./contexts/UserProfileContext";
 import "./components/style.css";
 
 
 export default function App() {
   return (
     <AuthProvider>
+       <UserProfileProvider>        
         <SearchDrawerProvider>
       <Router>
           <SearchDrawer />
@@ -65,6 +67,7 @@ export default function App() {
         </Routes>
       </Router>
       </SearchDrawerProvider>
+    </UserProfileProvider>
     </AuthProvider>
   );
 }
