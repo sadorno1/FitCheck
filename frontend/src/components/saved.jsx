@@ -29,7 +29,7 @@ export default function Saved() {
       const data = await res.json();
       setSavedPosts(data.posts || []);
       setLoading(false);
-      setIndex(0);                               // reset to first outfit
+      setIndex(0);                               
     })();
   }, []);
 
