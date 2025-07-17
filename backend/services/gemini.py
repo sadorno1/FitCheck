@@ -1,27 +1,128 @@
 import os
 import json
-from google import genai
-from google.genai import types
+import difflib
+import requests
+import google.generativeai as genai
+import datetime
+import hashlib
 from dotenv import load_dotenv
+from google.generativeai import types
 load_dotenv()
 
 # Configure Gemini
-genai.api_key = os.getenv('GENAI_API_KEY')
-client = genai.Client(api_key=genai.api_key)
+genai.configure(api_key=os.getenv('GENAI_API_KEY'))
 
-def ai_parse_resume_with_gemini(resume_text):
-    prompt = f"""
-You are a resume parser. Given the following resume text, output ONLY text that is in the form of valid JSON **do not include markdown back-ticks actual json format, just normal text that would be valid as json. also dont include newline symbols
-- education: string
-- experience: string
-- skills: string
-- projects: string
-Resume text:
-{resume_text}
-"""
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        config=types.GenerateContentConfig(temperature=0.0),
-        contents=prompt
+
+
+ALLOWED_TYPES      = ["shirt", "dress", "pants", "jeans", "shorts",
+                      "blazer", "jacket"]
+ALLOWED_COLORS     = ["black", "white", "gray", "red", "orange", "yellow",
+                      "green", "cyan", "blue", "purple"]
+ALLOWED_ETIQUETTES = ["casual", "formal", "business"]
+
+# ---- config ----
+import os, json, difflib, datetime, hashlib, requests, google.generativeai as genai
+from dotenv import load_dotenv
+load_dotenv()
+genai.configure(api_key=os.getenv("GENAI_API_KEY"))
+
+ALLOWED_TYPES      = ["shirt", "dress", "pants", "jeans", "shorts", "blazer", "jacket"]
+ALLOWED_COLORS     = ["black", "white", "gray", "red", "orange", "yellow",
+                      "green", "cyan", "blue", "purple"]
+ALLOWED_ETIQUETTES = ["casual", "formal", "business"]
+
+def _closest(word, choices):
+    if not word:
+        return choices[0]
+    return difflib.get_close_matches(word.lower(), choices, n=1, cutoff=0.0)[0]
+
+# ---- Gemini vision tagging --------------------------------------------------
+def gemini_tag_image(image_url: str) -> dict:
+    img_bytes = requests.get(image_url).content
+    img_part  = {"mime_type": "image/jpeg", "data": img_bytes}
+
+    prompt = (
+        "Classify this garment photo and reply ONLY with valid JSON. DO NOT USE BACKTICKS, DO NOT USE MARKDOWN, i literally want valid json\n"
+        f'"type": one of {ALLOWED_TYPES}\n'
+        f'"etiquette": one of {ALLOWED_ETIQUETTES}\n'
+        f'"color": one of {ALLOWED_COLORS}\n'
+        '"description": ≤ 20‑word style sentence.\n'
+        "Map close synonyms (e.g., trousers→pants, olive→green)."
     )
-    return json.loads(response.text)
+
+    model = genai.GenerativeModel("gemini-2.5-flash")  
+    resp  = model.generate_content(
+        contents=[img_part, prompt],
+        generation_config={"temperature": 0.2}
+    )  
+    data = json.loads(resp.text)
+
+    return {
+        "type":       _closest(data.get("type"), ALLOWED_TYPES),
+        "etiquette":  _closest(data.get("etiquette"), ALLOWED_ETIQUETTES),
+        "color":      _closest(data.get("color"), ALLOWED_COLORS),
+        "description": str(data.get("description", "")).strip()[:160]
+    }
+
+def generate_ootd(style_keywords: str, closet_items: list) -> list[int]:
+    """
+    Returns a list of item IDs for an outfit, e.g. [top_id, bottom_id] or [dress_id].
+    The first element is ALWAYS the top (or the dress).
+    """
+
+    # -- compress closet to avoid token bloat -------------------------------
+    mini_closet = [
+        { "id": c["id"], "type": c["type"], "color": c["color"],
+          "etiquette": c["etiquette"] }
+        for c in closet_items
+    ]
+
+    # -- deterministic daily seed so user doesn’t get same outfit ----------
+    today      = datetime.date.today().isoformat()
+    daily_seed = int(hashlib.sha256(today.encode()).hexdigest(), 16) % (10**8)
+
+    # -- prompt -------------------------------------------------------------
+    prompt = (
+        f"You are a fashion stylist.\n"
+        f"STYLE WORDS: {style_keywords}\n\n"
+        f"CLOSET (JSON array): {json.dumps(mini_closet)}\n\n"
+        "Goal: choose either (1) one dress, OR (2) one top and one bottom, that "
+        "match the style words as closely as possible (color palette, vibe, etiquette).\n"
+        "Respond with **ONLY** a JSON array of IDs in this exact order:\n"
+        "• If you choose a dress → [dress_id]\n"
+        "• If you choose top+bottom → [top_id, bottom_id] (TOP FIRST!)\n"
+        "No markdown, no keys, no extra text—just the JSON array.\n"
+        f"SEED: {daily_seed}"
+    )
+
+    model   = genai.GenerativeModel("gemini-1.5-flash")
+    resp    = model.generate_content(
+        prompt,
+        generation_config={
+            "temperature": 0.4,
+            "response_mime_type": "application/json"
+        }
+    )
+
+    raw_json = resp.text or resp.candidates[0].content.parts[0].text
+    clean    = _clean_json(raw_json)
+
+    try:
+        outfit_ids = json.loads(clean)
+        # sanity‑check list of ints
+        if (isinstance(outfit_ids, list) and
+            all(isinstance(i, int) for i in outfit_ids) and
+            1 <= len(outfit_ids) <= 2):
+            return outfit_ids
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    # ---------- fallback: simplest match if model misbehaves --------------
+    # find first dress or first top+bottom
+    dress = next((c["id"] for c in closet_items if c["type"] == "dress"), None)
+    if dress:
+        return [dress]
+
+    top    = next((c["id"] for c in closet_items if c["type"] in ("shirt", "top")), None)
+    bottom = next((c["id"] for c in closet_items if c["type"] in ("pants", "jeans", "shorts")), None)
+    return [top, bottom] if top and bottom else []

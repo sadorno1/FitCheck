@@ -19,7 +19,8 @@ from db.get_closet_by_user import get_closet_by_user
 from db.store_quiz_result   import store_quiz_result
 
 init_db()
-
+coso = sql_query("SELECT * FROM clothes WHERE user_id = ?", (3,), fetch = True)
+print([dict(r) for r in coso])
 
 app = Flask(__name__)
 CORS(

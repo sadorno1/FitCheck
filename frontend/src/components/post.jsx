@@ -1,165 +1,242 @@
-import React, { useState } from "react";
-import { storage, db } from "../firebase/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
-import { v4 as uuidv4 } from "uuid";
-import { useAuth } from "../contexts/authContext";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/authContext";
+import { getAuth } from "firebase/auth";
 
-const PostUpload = () => {
-  const [image, setImage] = useState(null);
-  const [comment, setComment] = useState("");
-  const [uploadedUrl, setUploadedUrl] = useState("");
-  const [likes, setLikes] = useState(0);
+/**
+ * PostCreator – upload a picture, add a caption, tag closet items, post.
+ * --------------------------------------------------------------------
+ * Routes
+ *   • GET  `${API_ROOT}/get_closet_by_user` – returns the signed‑in user’s closet
+ *   • POST `${API_ROOT}/posts`              – creates a new post (multipart/form‑data)
+ */
 
-  const { currentUser } = useAuth();
+const API_ROOT = "http://localhost:5000";
+
+// ─── helper: fetch with Firebase ID‑token ──────────────────────────────
+const authedFetch = async (url, options = {}) => {
+  const { currentUser } = getAuth();
+  const idToken = await currentUser?.getIdToken?.();
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+    },
+  });
+};
+
+const PostCreator = () => {
+  // ─── auth ────────────────────────────────────────────────────────────
+  const { currentUser: ctxUser } = useAuth() ?? {};
+  const fbUser = getAuth().currentUser;
+  const currentUser = ctxUser || fbUser;
+
   const navigate = useNavigate();
 
-  const handleUpload = async () => {
-    if (!image) return alert("Choose a file first!");
+  // ─── UI state ───────────────────────────────────────────────────────
+  const [image, setImage] = useState(null);
+  const [caption, setCaption] = useState("");
+  const [closet, setCloset] = useState([]);      // all closet items
+  const [selected, setSelected] = useState([]);  // tagged item IDs
+  const [loading, setLoading] = useState(false);
 
+  // ─── fetch closet from SQL backend ──────────────────────────────────
+  useEffect(() => {
+    if (!currentUser) return; // wait for sign‑in
+
+    (async () => {
+      try {
+        const res = await authedFetch(`${API_ROOT}/get_closet_by_user`);
+        if (!res.ok) throw new Error(`closet ${res.status}`);
+        const data = await res.json();
+        setCloset(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("closet fetch", err);
+      }
+    })();
+  }, [currentUser]);
+
+  // ─── toggle an item in the tagged list ──────────────────────────────
+  const toggleSelect = (id) => {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  // ─── POST /posts ────────────────────────────────────────────────────
+  const handlePost = async () => {
+    if (!image) return alert("Choose a picture first!");
+    if (!currentUser) return alert("You must be signed in to post.");
+
+    setLoading(true);
     try {
-      const imageRef = ref(storage, `posts/${uuidv4()}-${image.name}`);
-      await uploadBytes(imageRef, image);
-      const url = await getDownloadURL(imageRef);
-      setUploadedUrl(url);
+      const form = new FormData();
+      form.append("image", image);
+      form.append("caption", caption);
+      form.append("clothes", JSON.stringify(selected));
 
-      await addDoc(collection(db, "posts"), {
-        imageUrl: url,
-        comment,
-        userId: currentUser?.uid,
-        userEmail: currentUser?.email,
-        likes: 0,
-        createdAt: Timestamp.now(),
+      const idToken = await currentUser.getIdToken?.();
+      const res = await fetch(`${API_ROOT}/posts`, {
+        method: "POST",
+        headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+        body: form,
       });
 
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
       navigate("/profile", { state: { fromPostSuccess: true } });
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("Something went wrong during upload.");
+    } catch (err) {
+      console.error("post", err);
+      alert("Upload failed – please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const generateCaption = () => {
-    alert("✨ AI captions coming soon — stay tuned!");
-  };
-
+  // ─── markup ─────────────────────────────────────────────────────────
   return (
-    <div style={styles.container}>
-    <h2 style={styles.title}>📸 Upload Your Fit</h2>
-<p style={styles.subtitle}>We’re ready for a FitCheck 👀</p>
-
+    <div className="container" style={styles.container}>
+      <h2 className="title" style={styles.title}>📸 Upload Your Fit</h2>
+      <p className="subtitle" style={styles.subtitle}>
+        Show off today’s look & tag what you’re wearing
+      </p>
 
       <input
         type="file"
         accept="image/*"
         onChange={(e) => setImage(e.target.files[0])}
-        style={styles.input}
+        className="fileInput"
+        style={styles.fileInput}
       />
 
-     <textarea
-  placeholder="Add a cool caption..."
-  value={comment}
-  onChange={(e) => setComment(e.target.value)}
-  style={styles.textarea}
-/>
+      <textarea
+        className="captionInput"
+        style={styles.captionInput}
+        placeholder="Add a cool caption…"
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
+      />
 
-
-      <button onClick={generateCaption} style={styles.captionBtn}>
-        ✨ Generate a caption for me
-      </button>
-
-      <button onClick={handleUpload} style={styles.button}>
-        Post
-      </button>
-
-      {uploadedUrl && (
-        <div style={styles.preview}>
-          <img src={uploadedUrl} alt="Uploaded Fit" style={styles.image} />
-          <p style={styles.caption}>{comment}</p>
-          <button
-            onClick={() => setLikes(likes + 1)}
-            style={styles.likeBtn}
-          >
-            ❤️ {likes}
-          </button>
+      {/* closet picker */}
+      {closet.length > 0 && (
+        <div className="closetGrid" style={styles.closetGrid}>
+          {closet.map((item) => {
+            const isSelected = selected.includes(item.id);
+            return (
+              <div
+                key={item.id}
+                className="closetItem"
+                style={{
+                  ...styles.closetItem,
+                  ...(isSelected ? styles.closetItemSelected : {}),
+                }}
+                onClick={() => toggleSelect(item.id)}
+              >
+                <img src={item.image_url} alt="" style={styles.closetImage} />
+                {isSelected && <span style={styles.checkmark}>✓</span>}
+              </div>
+            );
+          })}
         </div>
       )}
+
+      <button
+        disabled={loading}
+        onClick={handlePost}
+        className="postButton"
+        style={{
+          ...styles.postButton,
+          ...(loading ? styles.postButtonDisabled : {}),
+        }}
+      >
+        {loading ? "Posting…" : "Post"}
+      </button>
     </div>
   );
 };
 
+// ─── styles – simple JS object you can move to CSS/SCSS later ─────────
 const styles = {
   container: {
-    padding: "2rem",
     maxWidth: "500px",
-    margin: "auto",
+    margin: "2rem auto",
+    padding: "1.5rem",
     textAlign: "center",
-    backgroundColor: "#fff7fb",
+    background: "#fff",
     borderRadius: "12px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
   title: {
     fontSize: "1.8rem",
-    marginBottom: "0.5rem",
+    marginBottom: "0.25rem",
     color: "#5c2a9d",
   },
   subtitle: {
-    fontSize: "1rem",
-    color: "#777",
+    fontSize: "0.95rem",
+    color: "#666",
     marginBottom: "1rem",
   },
-  input: {
+  fileInput: {
     marginBottom: "1rem",
   },
-  textarea: {
+  captionInput: {
     width: "100%",
-    height: "60px",
+    height: "80px",
     padding: "0.5rem",
     borderRadius: "8px",
     border: "1px solid #ccc",
-    marginBottom: "0.5rem",
-  },
-  captionBtn: {
     marginBottom: "1rem",
-    backgroundColor: "#f5e6ff",
-    padding: "0.4rem 1rem",
-    borderRadius: "8px",
-    border: "1px solid #d1b3ff",
-    cursor: "pointer",
-    color: "#7b2cbf",
-    fontWeight: "500",
   },
-  button: {
-    padding: "0.6rem 1.5rem",
-    backgroundColor: "#8224e3",
+  closetGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "0.5rem",
+    maxHeight: "200px",
+    overflowY: "auto",
+    marginBottom: "1.25rem",
+  },
+  closetItem: {
+    position: "relative",
+    cursor: "pointer",
+    border: "2px solid black",
+    borderRadius: "8px",
+    background: "#f9f9f9",
+    padding: "4px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closetItemSelected: {
+    borderColor: "#7b2cbf",
+  },
+  closetImage: {
+    maxWidth: "100%",
+    height: "100px",
+    objectFit: "contain", 
+  },
+  checkmark: {
+    position: "absolute",
+    top: "4px",
+    right: "4px",
+    background: "#7b2cbf",
     color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    marginBottom: "1rem",
+    fontSize: "12px",
+    borderRadius: "50%",
+    padding: "2px 5px",
   },
-  preview: {
-    marginTop: "2rem",
-  },
-  image: {
+  postButton: {
     width: "100%",
-    maxHeight: "300px",
-    objectFit: "cover",
-    borderRadius: "8px",
-  },
-  caption: {
-    marginTop: "0.5rem",
-    fontStyle: "italic",
-  },
-  likeBtn: {
-    marginTop: "0.5rem",
-    backgroundColor: "transparent",
+    padding: "0.6rem 0",
     border: "none",
-    fontSize: "1.2rem",
+    borderRadius: "8px",
+    background: "#8224e3",
+    color: "#fff",
+    fontWeight: 600,
     cursor: "pointer",
+    transition: "background 0.2s ease",
+  },
+  postButtonDisabled: {
+    opacity: 0.6,
+    cursor: "not-allowed",
   },
 };
 
-export default PostUpload;
+export default PostCreator;
