@@ -26,4 +26,4 @@ pyc
 *.sln
 *.sw?
 keys.json
-
+fitcheck_secret.json
