@@ -52,7 +52,6 @@ langchain-text-splitters==0.3.8
 langsmith==0.3.45
 MarkupSafe==3.0.2
 msgpack==1.1.1
-mypy @ file:///C:/Users/saman/Desktop/uiuc7/mypyc/mypy
 mypy_extensions==1.1.0
 Nuitka==2.7.5
 ordered-set==4.1.0
