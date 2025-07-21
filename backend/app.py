@@ -20,8 +20,6 @@ from db.store_quiz_result   import store_quiz_result
 from services.gemini import generate_ootd
 
 init_db()
-coso = sql_query("SELECT * FROM clothes WHERE user_id = ?", (4,), fetch = True)
-print([dict(r) for r in coso])
 
 app = Flask(__name__)
 CORS(
@@ -150,18 +148,9 @@ def api_feed():
 @app.get("/users/<string:uid>/following")
 @require_auth
 def api_get_following(uid):
-    current_uid = g.current_user["uid"]
-    if uid not in ("me", current_uid):
-        return {"error": "Unauthorized"}, 403
-
-    target_uid = current_uid if uid == "me" else uid
-    app.logger.debug(f"Requested follow list for Firebase UID {target_uid}")
-
-    user_id = get_or_create_user_id(target_uid)
-    app.logger.debug(f"Mapped to local user_id {user_id}")
-
+    firebase_uid = g.current_user["uid"]
+    user_id = get_or_create_user_id(firebase_uid)
     following = get_following(user_id)
-    app.logger.debug(f"get_following returned {following!r}")
 
     return {"following": following}
 
@@ -236,13 +225,6 @@ def public_posts(user_id):
 @app.post("/avatar")
 @require_auth
 def api_save_avatar():
-    """
-    Body (JSON):
-      {
-        "face": 4,
-        "bodyType": "medium"
-      }
-    """
     data = request.get_json(force=True)
 
     # Basic validation
@@ -252,7 +234,6 @@ def api_save_avatar():
     except (KeyError, ValueError):
         return {"error": "Invalid payload"}, 400
 
-    # Current user → numeric user_id
     firebase_uid = g.current_user["uid"]
     user_id      = get_or_create_user_id(firebase_uid)
 
@@ -270,7 +251,6 @@ def api_save_avatar():
 @app.get("/avatar")
 @require_auth
 def api_get_avatar():
-    """Return the saved avatar model for the current user (or null)."""
     firebase_uid = g.current_user["uid"]
     user_id      = get_or_create_user_id(firebase_uid)
 
@@ -387,11 +367,6 @@ def save_ootd():
 @app.get("/ootd_ids")
 @require_auth
 def fetch_ootd_ids():
-    """
-    Returns:
-      { "date": "2025‑07‑17", "outfit": [12,45] }
-      or 404 if none saved today
-    """
     firebase_uid = g.current_user["uid"]
     user_id      = get_or_create_user_id(firebase_uid)
     today        = datetime.date.today().isoformat()
@@ -452,7 +427,6 @@ def fetch_posts():
 @app.post("/update_preferences")
 @require_auth
 def update_preferences():
-    """Update basic profile fields."""
     data = request.get_json(force=True) or {}
     firebase_uid = g.current_user["uid"]
     user_id      = get_or_create_user_id(firebase_uid)
